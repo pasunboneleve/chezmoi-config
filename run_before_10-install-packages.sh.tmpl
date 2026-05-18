@@ -63,6 +63,15 @@ for font in \
 done
 fc-cache -f "$icon_font_dir"
 
+nerd_icon_font_dir="${XDG_DATA_HOME:-$HOME/.local/share}/fonts/nerd-icons"
+mkdir -p "$nerd_icon_font_dir"
+if [ ! -f "$nerd_icon_font_dir/NFM.ttf" ]; then
+  curl -fsSL \
+    "https://raw.githubusercontent.com/rainstormstudio/nerd-icons.el/main/fonts/NFM.ttf" \
+    -o "$nerd_icon_font_dir/NFM.ttf"
+fi
+fc-cache -f "$nerd_icon_font_dir"
+
 plugin_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
 mkdir -p "$plugin_dir"
 
@@ -143,6 +152,14 @@ for font in \
       -o "$icon_font_dir/$font"
   fi
 done
+
+nerd_icon_font_dir="$HOME/Library/Fonts/nerd-icons"
+mkdir -p "$nerd_icon_font_dir"
+if [ ! -f "$nerd_icon_font_dir/NFM.ttf" ]; then
+  curl -fsSL \
+    "https://raw.githubusercontent.com/rainstormstudio/nerd-icons.el/main/fonts/NFM.ttf" \
+    -o "$nerd_icon_font_dir/NFM.ttf"
+fi
 
 plugin_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
 mkdir -p "$plugin_dir"
