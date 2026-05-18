@@ -23,6 +23,14 @@ enable_service() {
 }
 
 if command -v systemctl >/dev/null 2>&1; then
+  if command -v gsettings >/dev/null 2>&1; then
+    "$HOME/.local/bin/configure-keyboard-layout"
+  fi
+
+  if [[ -x "$HOME/.local/bin/open-missing-gnome-extensions" ]]; then
+    "$HOME/.local/bin/open-missing-gnome-extensions"
+  fi
+
   if ! systemctl --user daemon-reload; then
     echo "Failed to reload user systemd units." >&2
     failed=1

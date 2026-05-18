@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "${XDG_CURRENT_DESKTOP:-}" != "GNOME" ]; then
+  exit 0
+fi
+
+if lsusb | grep -qi 'Apple, Inc\. Aluminum Keyboard (ANSI)'; then
+  gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'au')]"
+  gsettings set org.gnome.desktop.input-sources xkb-options "['model:applealu_ansi']"
+fi
