@@ -4,20 +4,25 @@ Personal machine configuration managed by chezmoi.
 
 ## Bootstrap
 
+Run chezmoi from this repository and pass the source directory explicitly;
+otherwise chezmoi uses its default source directory.
+
 ```sh
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply git@github.com:pasunboneleve/chezmoi-config.git
+git clone git@github.com:pasunboneleve/chezmoi-config.git
+cd chezmoi-config
+chezmoi --source . apply
 ```
 
-If chezmoi is already installed:
+If the source repository already exists:
 
 ```sh
-chezmoi init --apply git@github.com:pasunboneleve/chezmoi-config.git
+chezmoi --source . apply
 ```
 
 Package installation is opt-in:
 
 ```sh
-CHEZMOI_INSTALL_PACKAGES=1 chezmoi apply
+CHEZMOI_INSTALL_PACKAGES=1 chezmoi --source . apply
 ```
 
 On Fedora, `dnf` installs the zsh plugins it packages
