@@ -6,6 +6,42 @@ if [ "${CHEZMOI_INSTALL_PACKAGES:-0}" != "1" ]; then
   exit 0
 fi
 
+export PATH="$HOME/.local/bin:$HOME/.bun/bin:$HOME/go/bin:$PATH"
+
+install_from_script() {
+  local name="$1"
+  local url="$2"
+  local installer
+
+  installer="$(mktemp)"
+  curl -fsSL "$url" -o "$installer"
+  echo "Installing $name from $url"
+  bash "$installer"
+  rm -f "$installer"
+}
+
+install_js_package() {
+  local executable="$1"
+  local package="$2"
+
+  if command -v "$executable" >/dev/null 2>&1; then
+    return
+  fi
+
+  if command -v bun >/dev/null 2>&1; then
+    bun install -g "$package"
+    return
+  fi
+
+  if [ "${CHEZMOI_USE_NPM_FOR_JS_PACKAGES:-0}" = "1" ] && command -v npm >/dev/null 2>&1; then
+    npm install -g "$package"
+    return
+  fi
+
+  echo "$package requires bun. Set CHEZMOI_USE_NPM_FOR_JS_PACKAGES=1 to allow npm instead."
+  exit 1
+}
+
 {{ if eq .chezmoi.os "linux" -}}
 if command -v dnf >/dev/null 2>&1; then
   sudo dnf -y copr enable blakegardner/xremap
@@ -20,9 +56,12 @@ if command -v dnf >/dev/null 2>&1; then
     golang \
     ghostty \
     levien-inconsolata-fonts \
+    nodejs \
+    npm \
     python-uv \
     ripgrep \
     rust \
+    unzip \
     xremap-gnome \
     zsh \
     zsh-autosuggestions \
@@ -37,6 +76,24 @@ fi
 if ! command -v starship >/dev/null 2>&1; then
   echo "starship is not available from the enabled Fedora repos; install it separately."
 fi
+
+if ! command -v bun >/dev/null 2>&1; then
+  install_from_script bun https://bun.com/install
+fi
+
+if ! command -v uv >/dev/null 2>&1; then
+  install_from_script uv https://astral.sh/uv/install.sh
+fi
+
+if ! command -v roborev >/dev/null 2>&1; then
+  install_from_script roborev https://roborev.io/install.sh
+fi
+
+if ! command -v bd >/dev/null 2>&1; then
+  install_from_script beads https://raw.githubusercontent.com/gastownhall/beads/main/scripts/install.sh
+fi
+
+install_js_package agent-skills-eval agent-skills-eval
 
 if ! command -v emacs-lsp-booster >/dev/null 2>&1; then
   cargo install emacs-lsp-booster
@@ -114,10 +171,14 @@ if command -v brew >/dev/null 2>&1; then
     git \
     git-filter-repo \
     go \
+    node \
     ripgrep \
+    roborev-dev/tap/roborev \
     rust \
     starship \
     uv \
+    beads \
+    bun \
     zsh \
     zsh-autocomplete \
     zsh-autosuggestions \
@@ -128,6 +189,24 @@ if command -v brew >/dev/null 2>&1; then
     font-inconsolata \
     ghostty
 fi
+
+if ! command -v bun >/dev/null 2>&1; then
+  install_from_script bun https://bun.com/install
+fi
+
+if ! command -v uv >/dev/null 2>&1; then
+  install_from_script uv https://astral.sh/uv/install.sh
+fi
+
+if ! command -v roborev >/dev/null 2>&1; then
+  install_from_script roborev https://roborev.io/install.sh
+fi
+
+if ! command -v bd >/dev/null 2>&1; then
+  install_from_script beads https://raw.githubusercontent.com/gastownhall/beads/main/scripts/install.sh
+fi
+
+install_js_package agent-skills-eval agent-skills-eval
 
 if ! command -v emacs-lsp-booster >/dev/null 2>&1; then
   cargo install emacs-lsp-booster
