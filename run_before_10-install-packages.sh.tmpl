@@ -10,13 +10,16 @@ fi
 if command -v dnf >/dev/null 2>&1; then
   sudo dnf install -y \
     chezmoi \
+    cargo \
     direnv \
     emacs \
     git \
     git-filter-repo \
+    golang \
     ghostty \
     levien-inconsolata-fonts \
     ripgrep \
+    rust \
     zsh \
     zsh-autosuggestions \
     zsh-syntax-highlighting
@@ -28,6 +31,10 @@ fi
 
 if ! command -v xremap >/dev/null 2>&1; then
   echo "xremap is not available from the enabled Fedora repos; install it separately."
+fi
+
+if ! command -v emacs-lsp-booster >/dev/null 2>&1; then
+  cargo install emacs-lsp-booster
 fi
 
 plugin_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
@@ -71,7 +78,9 @@ if command -v brew >/dev/null 2>&1; then
     emacs \
     git \
     git-filter-repo \
+    go \
     ripgrep \
+    rust \
     starship \
     zsh \
     zsh-autocomplete \
@@ -82,6 +91,10 @@ if command -v brew >/dev/null 2>&1; then
   brew install --cask \
     font-inconsolata \
     ghostty
+fi
+
+if ! command -v emacs-lsp-booster >/dev/null 2>&1; then
+  cargo install emacs-lsp-booster
 fi
 
 plugin_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
