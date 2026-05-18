@@ -76,6 +76,8 @@ if command -v dnf >/dev/null 2>&1; then
     levien-inconsolata-fonts \
     nodejs \
     npm \
+    openssl-devel \
+    pkgconf-pkg-config \
     python-uv \
     ripgrep \
     rust \
@@ -112,6 +114,14 @@ install_js_package agent-skills-eval agent-skills-eval
 
 if ! command -v emacs-lsp-booster >/dev/null 2>&1; then
   cargo install emacs-lsp-booster
+fi
+
+if ! command -v typst >/dev/null 2>&1; then
+  cargo install --locked typst-cli
+fi
+
+if ! command -v tinymist >/dev/null 2>&1; then
+  cargo install --git https://github.com/Myriad-Dreamin/tinymist --locked tinymist-cli
 fi
 
 if ! command -v pyright-langserver >/dev/null 2>&1; then
@@ -187,10 +197,14 @@ if command -v brew >/dev/null 2>&1; then
     git-filter-repo \
     go \
     node \
+    openssl@3 \
+    pkg-config \
     ripgrep \
     roborev-dev/tap/roborev \
     rust \
     starship \
+    tinymist \
+    typst \
     uv \
     beads \
     bun \
@@ -225,6 +239,14 @@ install_js_package agent-skills-eval agent-skills-eval
 
 if ! command -v emacs-lsp-booster >/dev/null 2>&1; then
   cargo install emacs-lsp-booster
+fi
+
+if ! command -v typst >/dev/null 2>&1; then
+  cargo install --locked typst-cli
+fi
+
+if ! command -v tinymist >/dev/null 2>&1; then
+  cargo install --git https://github.com/Myriad-Dreamin/tinymist --locked tinymist-cli
 fi
 
 if ! command -v pyright-langserver >/dev/null 2>&1; then
