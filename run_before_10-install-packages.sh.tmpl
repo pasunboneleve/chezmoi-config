@@ -18,6 +18,7 @@ if command -v dnf >/dev/null 2>&1; then
     golang \
     ghostty \
     levien-inconsolata-fonts \
+    python-uv \
     ripgrep \
     rust \
     zsh \
@@ -36,6 +37,27 @@ fi
 if ! command -v emacs-lsp-booster >/dev/null 2>&1; then
   cargo install emacs-lsp-booster
 fi
+
+if ! command -v pyright-langserver >/dev/null 2>&1; then
+  uv tool install pyright
+fi
+
+icon_font_dir="${XDG_DATA_HOME:-$HOME/.local/share}/fonts/all-the-icons"
+mkdir -p "$icon_font_dir"
+for font in \
+  all-the-icons.ttf \
+  file-icons.ttf \
+  fontawesome.ttf \
+  material-design-icons.ttf \
+  octicons.ttf \
+  weathericons.ttf; do
+  if [ ! -f "$icon_font_dir/$font" ]; then
+    curl -fsSL \
+      "https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/$font" \
+      -o "$icon_font_dir/$font"
+  fi
+done
+fc-cache -f "$icon_font_dir"
 
 plugin_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
 mkdir -p "$plugin_dir"
@@ -82,6 +104,7 @@ if command -v brew >/dev/null 2>&1; then
     ripgrep \
     rust \
     starship \
+    uv \
     zsh \
     zsh-autocomplete \
     zsh-autosuggestions \
@@ -96,6 +119,26 @@ fi
 if ! command -v emacs-lsp-booster >/dev/null 2>&1; then
   cargo install emacs-lsp-booster
 fi
+
+if ! command -v pyright-langserver >/dev/null 2>&1; then
+  uv tool install pyright
+fi
+
+icon_font_dir="$HOME/Library/Fonts/all-the-icons"
+mkdir -p "$icon_font_dir"
+for font in \
+  all-the-icons.ttf \
+  file-icons.ttf \
+  fontawesome.ttf \
+  material-design-icons.ttf \
+  octicons.ttf \
+  weathericons.ttf; do
+  if [ ! -f "$icon_font_dir/$font" ]; then
+    curl -fsSL \
+      "https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/$font" \
+      -o "$icon_font_dir/$font"
+  fi
+done
 
 plugin_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
 mkdir -p "$plugin_dir"
