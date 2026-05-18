@@ -1,14 +1,14 @@
 [Unit]
-Description=Emacs daemon
-Documentation=info:emacs man:emacs(1)
+Description=Emacs text editor
+Documentation=info:emacs man:emacs(1) https://gnu.org/software/emacs/
 PartOf=graphical-session.target
 After=graphical-session.target
 
 [Service]
-Type=forking
-ExecStart=emacs --daemon
-ExecStop=emacsclient --eval "(kill-emacs)"
+Type=notify
+ExecStart=/usr/bin/emacs --fg-daemon
+SuccessExitStatus=15
 Restart=on-failure
 
 [Install]
-WantedBy=graphical-session.target
+WantedBy=default.target
