@@ -15,6 +15,7 @@ if command -v dnf >/dev/null 2>&1; then
     git \
     git-filter-repo \
     ghostty \
+    levien-inconsolata-fonts \
     ripgrep \
     zsh \
     zsh-autosuggestions \
@@ -78,7 +79,9 @@ if command -v brew >/dev/null 2>&1; then
     zsh-completions \
     zsh-history-substring-search \
     zsh-syntax-highlighting
-  brew install --cask ghostty
+  brew install --cask \
+    font-inconsolata \
+    ghostty
 fi
 
 plugin_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
