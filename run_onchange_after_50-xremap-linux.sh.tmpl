@@ -1,9 +1,0 @@
-#!/bin/sh
-set -eu
-
-{{ if eq .chezmoi.os "linux" -}}
-if command -v systemctl >/dev/null 2>&1 && command -v xremap >/dev/null 2>&1; then
-  systemctl --user daemon-reload
-  systemctl --user enable --now xremap.service
-fi
-{{ end -}}

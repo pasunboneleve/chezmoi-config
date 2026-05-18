@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+schema="org.gnome.desktop.interface"
+
+sync_theme() {
+  local color_scheme
+  local current_theme
+  local target_theme
+
+  color_scheme="$(gsettings get "$schema" color-scheme)"
+
+  case "$color_scheme" in
+    "'prefer-dark'")
+      target_theme="Adwaita-dark"
+      ;;
+    "'default'" | "'prefer-light'")
+      target_theme="Adwaita"
+      ;;
+    *)
+      target_theme="Adwaita"
+      ;;
+  esac
+
+  current_theme="$(gsettings get "$schema" gtk-theme)"
+  if [[ "$current_theme" != "'$target_theme'" ]]; then
+    gsettings set "$schema" gtk-theme "$target_theme"
+  fi
+}
+
+sync_theme
+
+gsettings monitor "$schema" color-scheme | while read -r _; do
+  sync_theme
+done

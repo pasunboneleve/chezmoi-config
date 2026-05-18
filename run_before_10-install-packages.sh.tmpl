@@ -1,5 +1,5 @@
-#!/bin/sh
-set -eu
+#!/usr/bin/env bash
+set -euo pipefail
 
 if [ "${CHEZMOI_INSTALL_PACKAGES:-0}" != "1" ]; then
   echo "Skipping package installation. Set CHEZMOI_INSTALL_PACKAGES=1 to enable it."
@@ -8,6 +8,8 @@ fi
 
 {{ if eq .chezmoi.os "linux" -}}
 if command -v dnf >/dev/null 2>&1; then
+  sudo dnf -y copr enable blakegardner/xremap
+
   sudo dnf install -y \
     chezmoi \
     cargo \
@@ -21,17 +23,19 @@ if command -v dnf >/dev/null 2>&1; then
     python-uv \
     ripgrep \
     rust \
+    xremap-gnome \
     zsh \
     zsh-autosuggestions \
     zsh-syntax-highlighting
+
+  if command -v udevadm >/dev/null 2>&1; then
+    sudo udevadm control --reload-rules
+    sudo udevadm trigger --name-match=/dev/uinput
+  fi
 fi
 
 if ! command -v starship >/dev/null 2>&1; then
   echo "starship is not available from the enabled Fedora repos; install it separately."
-fi
-
-if ! command -v xremap >/dev/null 2>&1; then
-  echo "xremap is not available from the enabled Fedora repos; install it separately."
 fi
 
 if ! command -v emacs-lsp-booster >/dev/null 2>&1; then

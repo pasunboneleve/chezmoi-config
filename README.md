@@ -36,6 +36,11 @@ packaged zsh plugins directly.
 - `~/.config/starship.toml`
 - `~/.config/emacs` from `github.com/pasunboneleve/emacs.d`
 - Linux-only `~/.config/xremap/xremap.yml`
+- Linux-only user services:
+  - `emacs.service`
+  - `sync-gtk-theme-to-gnome.service`
+  - `xremap.service`
+  These are enabled idempotently on every `chezmoi apply`.
 - Linux-only Emacs desktop entries
 
 ## Notes

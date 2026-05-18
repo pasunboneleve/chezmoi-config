@@ -3,10 +3,10 @@ Description=Start remap
 
 [Service]
 Type=exec
-TimeOutStartSec=30
+TimeoutStartSec=30
 WorkingDirectory=%h
 StandardOutput=journal
-ExecStart=xremap %h/.config/xremap/xremap.yml
+ExecStart=xremap-gnome --watch=device,config %h/.config/xremap/xremap.yml
 Restart=always
 
 [Install]

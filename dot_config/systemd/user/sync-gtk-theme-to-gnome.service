@@ -1,0 +1,13 @@
+[Unit]
+Description=Sync GTK theme with GNOME color scheme
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/sync-gtk-theme-to-gnome
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

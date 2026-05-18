@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{{ if eq .chezmoi.os "linux" -}}
+failed=0
+
+enable_service() {
+  local service="$1"
+  local required_command="${2:-}"
+
+  if [[ -n "$required_command" ]] && ! command -v "$required_command" >/dev/null 2>&1; then
+    echo "Skipping $service: $required_command is not installed."
+    return 0
+  fi
+
+  if systemctl --user enable --now "$service"; then
+    echo "Enabled and started $service."
+  else
+    echo "Failed to enable/start $service." >&2
+    failed=1
+  fi
+}
+
+if command -v systemctl >/dev/null 2>&1; then
+  if ! systemctl --user daemon-reload; then
+    echo "Failed to reload user systemd units." >&2
+    failed=1
+  fi
+
+  enable_service emacs.service emacs
+  enable_service sync-gtk-theme-to-gnome.service gsettings
+  enable_service xremap.service xremap-gnome
+else
+  echo "Skipping user services: systemctl is not installed."
+fi
+
+if [[ "$failed" -ne 0 ]]; then
+  echo "One or more user services failed to enable/start; see messages above." >&2
+fi
+{{ end -}}
