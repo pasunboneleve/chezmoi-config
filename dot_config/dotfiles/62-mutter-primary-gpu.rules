@@ -1,0 +1,25 @@
+# In Fedora 43 libva is needed for NVIDIA to work with Wayland.
+#
+# sudo dnf install libva-nvidia-driver libva-utils
+#
+# Place this file in /etc/udev/rules.d/62-mutter-primary-gpu.rules. Find out
+# which is the card you want to use as primary with
+#
+# $ drm_info -j | jq '. | with_entries(.value |= .driver.desc)'
+#
+# and then check if your programs appear in the list used by NVIDIA
+#
+# $ nvidia-smi
+#
+
+ENV{DEVNAME}=="/dev/dri/card0", TAG+="mutter-device-preferred-primary"
+
+#
+# Chromium 142 and Google Chrome Canary 144 will work with the GPU
+# in Wayland without tweaks. For Firefox 145 we also need to set these
+# flags in about:config to true:
+#
+# media.hardware-video-decoding.force-enabled
+# media.hardware-video-encoding.force-enabled
+# widget.dmabuf.force-enabled
+#

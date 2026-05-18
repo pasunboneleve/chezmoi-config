@@ -1,0 +1,4 @@
+[".config/emacs"]
+type = "git-repo"
+url = "https://github.com/pasunboneleve/emacs.d.git"
+refreshPeriod = "168h"

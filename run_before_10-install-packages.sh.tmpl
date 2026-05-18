@@ -1,0 +1,102 @@
+#!/bin/sh
+set -eu
+
+if [ "${CHEZMOI_INSTALL_PACKAGES:-0}" != "1" ]; then
+  echo "Skipping package installation. Set CHEZMOI_INSTALL_PACKAGES=1 to enable it."
+  exit 0
+fi
+
+{{ if eq .chezmoi.os "linux" -}}
+if command -v dnf >/dev/null 2>&1; then
+  sudo dnf install -y \
+    chezmoi \
+    direnv \
+    emacs \
+    git \
+    git-filter-repo \
+    ghostty \
+    ripgrep \
+    zsh \
+    zsh-autosuggestions \
+    zsh-syntax-highlighting
+fi
+
+if ! command -v starship >/dev/null 2>&1; then
+  echo "starship is not available from the enabled Fedora repos; install it separately."
+fi
+
+if ! command -v xremap >/dev/null 2>&1; then
+  echo "xremap is not available from the enabled Fedora repos; install it separately."
+fi
+
+plugin_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
+mkdir -p "$plugin_dir"
+
+if [ ! -d "$plugin_dir/zsh-autocomplete/.git" ]; then
+  git clone https://github.com/marlonrichert/zsh-autocomplete.git "$plugin_dir/zsh-autocomplete"
+fi
+
+if [ ! -d "$plugin_dir/zsh-completions/.git" ]; then
+  git clone https://github.com/zsh-users/zsh-completions.git "$plugin_dir/zsh-completions"
+fi
+
+if [ ! -d "$plugin_dir/zsh-history-substring-search/.git" ]; then
+  git clone https://github.com/zsh-users/zsh-history-substring-search.git "$plugin_dir/zsh-history-substring-search"
+fi
+
+if [ ! -d "$plugin_dir/zsh-z/.git" ]; then
+  git clone https://github.com/agkozak/zsh-z.git "$plugin_dir/zsh-z"
+fi
+
+plugin_bin="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/bin"
+mkdir -p "$plugin_bin"
+for executable in "$plugin_dir"/*/* "$HOME/.local/share/zinit/plugins"/*/*; do
+  [ -f "$executable" ] || continue
+  [ -x "$executable" ] || continue
+  case "$executable" in
+    */zinit-annex-*/*|*/zdharma-continuum---zinit-annex-*/*) continue ;;
+  esac
+  name="$(basename "$executable")"
+  case "$name" in
+    .*|*.plugin.zsh|*.zsh|*.zwc|*.png|*.md|test-*|run-tests*) continue ;;
+  esac
+  ln -sfn "$executable" "$plugin_bin/$name"
+done
+{{ else if eq .chezmoi.os "darwin" -}}
+if command -v brew >/dev/null 2>&1; then
+  brew install \
+    chezmoi \
+    direnv \
+    emacs \
+    git \
+    git-filter-repo \
+    ripgrep \
+    starship \
+    zsh \
+    zsh-autocomplete \
+    zsh-autosuggestions \
+    zsh-completions \
+    zsh-history-substring-search \
+    zsh-syntax-highlighting
+  brew install --cask ghostty
+fi
+
+plugin_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
+mkdir -p "$plugin_dir"
+
+if [ ! -d "$plugin_dir/zsh-z/.git" ]; then
+  git clone https://github.com/agkozak/zsh-z.git "$plugin_dir/zsh-z"
+fi
+
+plugin_bin="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/bin"
+mkdir -p "$plugin_bin"
+for executable in "$plugin_dir"/*/*; do
+  [ -f "$executable" ] || continue
+  [ -x "$executable" ] || continue
+  name="$(basename "$executable")"
+  case "$name" in
+    .*|*.plugin.zsh|*.zsh|*.zwc|*.png|*.md|test-*|run-tests*) continue ;;
+  esac
+  ln -sfn "$executable" "$plugin_bin/$name"
+done
+{{ end -}}

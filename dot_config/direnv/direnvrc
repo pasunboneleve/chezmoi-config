@@ -1,0 +1,25 @@
+# ~/.direnvrc
+# also add ~/.nix-direnv/direnvrc from
+# https://github.com/nix-community/nix-direnv/blob/master/direnvrc
+
+if [ -f "$HOME/.nix-direnv/direnvrc" ]; then
+  source "$HOME/.nix-direnv/direnvrc"
+fi
+
+if [ -f /run/current-system/sw/share/nix-direnv/direnvrc ]; then
+  source /run/current-system/sw/share/nix-direnv/direnvrc
+fi
+
+#
+# This is how to make `nvm` work within an .envrc file, so we only
+# use a hopelessly old `node` version within its equally old project.
+#
+# [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+# nvm use v12.22.12
+#
+
+## cache direnv, so it loads faster
+## https://github.com/nix-community/nix-direnv
+if [ -f "$HOME/.nix-profile/share/nix-direnv/direnvrc" ]; then
+  source "$HOME/.nix-profile/share/nix-direnv/direnvrc"
+fi

@@ -1,0 +1,4 @@
+/.config                 mode=0700
+/.local                  mode=0700
+/.local/share            mode=0700
+/.local/share/applications mode=0700

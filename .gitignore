@@ -1,0 +1,20 @@
+# editor/OS noise
+*~
+*.swp
+*.swo
+.DS_Store
+
+# Emacs lock/autosave files
+.#*
+\#*\#
+
+# Codex local state
+.codex
+codex-*
+
+# local scratch
+tmp/
+.cache/
+
+# chezmoi local state should not live in the source repo
+.chezmoistate*

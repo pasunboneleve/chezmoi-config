@@ -1,0 +1,8 @@
+README.md
+
+{{ if ne .chezmoi.os "linux" }}
+dot_config/xremap/
+dot_config/systemd/user/xremap.service.tmpl
+dot_local/share/applications/emacs-client.desktop.tmpl
+dot_local/share/applications/emacs-server.desktop.tmpl
+{{ end }}
