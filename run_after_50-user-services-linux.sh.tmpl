@@ -7,14 +7,15 @@ failed=0
 enable_service() {
   local service="$1"
   local required_command="${2:-}"
+  local action="${3:-start}"
 
   if [[ -n "$required_command" ]] && ! command -v "$required_command" >/dev/null 2>&1; then
     echo "Skipping $service: $required_command is not installed."
     return 0
   fi
 
-  if systemctl --user enable --now "$service"; then
-    echo "Enabled and started $service."
+  if systemctl --user reenable "$service" && systemctl --user "$action" "$service"; then
+    echo "Enabled and ${action}ed $service."
   else
     echo "Failed to enable/start $service." >&2
     failed=1
@@ -27,8 +28,8 @@ if command -v systemctl >/dev/null 2>&1; then
     failed=1
   fi
 
+  enable_service sync-gtk-theme-to-gnome.service gsettings restart
   enable_service emacs.service emacs
-  enable_service sync-gtk-theme-to-gnome.service gsettings
   enable_service xremap.service xremap-gnome
 else
   echo "Skipping user services: systemctl is not installed."

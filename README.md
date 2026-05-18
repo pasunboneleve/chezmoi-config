@@ -41,7 +41,7 @@ packaged zsh plugins directly.
   - `sync-gtk-theme-to-gnome.service`
   - `xremap.service`
   These are enabled idempotently on every `chezmoi apply`.
-- Linux-only Emacs desktop entries
+- Linux-only Emacs client desktop entry
 
 ## Notes
 

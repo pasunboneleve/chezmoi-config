@@ -2,13 +2,14 @@
 Description=Emacs text editor
 Documentation=info:emacs man:emacs(1) https://gnu.org/software/emacs/
 PartOf=graphical-session.target
-After=graphical-session.target
+Wants=sync-gtk-theme-to-gnome.service
+After=graphical-session.target sync-gtk-theme-to-gnome.service
 
 [Service]
 Type=notify
-ExecStart=/usr/bin/emacs --fg-daemon
+ExecStart=/usr/bin/bash -lc 'set -euo pipefail; if gsettings get org.gnome.desktop.interface color-scheme | grep -q prefer-dark; then export GTK_THEME=Adwaita:dark; else export GTK_THEME=Adwaita; fi; exec /usr/bin/emacs --fg-daemon'
 SuccessExitStatus=15
 Restart=on-failure
 
 [Install]
-WantedBy=default.target
+WantedBy=graphical-session.target

@@ -1,35 +1,53 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-schema="org.gnome.desktop.interface"
+interface_schema="org.gnome.desktop.interface"
+wm_schema="org.gnome.desktop.wm.preferences"
+gtk3_settings="${XDG_CONFIG_HOME:-$HOME/.config}/gtk-3.0/settings.ini"
 
 sync_theme() {
   local color_scheme
   local current_theme
+  local prefer_dark
   local target_theme
 
-  color_scheme="$(gsettings get "$schema" color-scheme)"
+  color_scheme="$(gsettings get "$interface_schema" color-scheme)"
 
   case "$color_scheme" in
     "'prefer-dark'")
       target_theme="Adwaita-dark"
+      prefer_dark="1"
       ;;
     "'default'" | "'prefer-light'")
       target_theme="Adwaita"
+      prefer_dark="0"
       ;;
     *)
       target_theme="Adwaita"
+      prefer_dark="0"
       ;;
   esac
 
-  current_theme="$(gsettings get "$schema" gtk-theme)"
+  current_theme="$(gsettings get "$interface_schema" gtk-theme)"
   if [[ "$current_theme" != "'$target_theme'" ]]; then
-    gsettings set "$schema" gtk-theme "$target_theme"
+    gsettings set "$interface_schema" gtk-theme "$target_theme"
   fi
+
+  current_theme="$(gsettings get "$wm_schema" theme)"
+  if [[ "$current_theme" != "'$target_theme'" ]]; then
+    gsettings set "$wm_schema" theme "$target_theme"
+  fi
+
+  mkdir -p "$(dirname "$gtk3_settings")"
+  cat > "$gtk3_settings" <<EOF
+[Settings]
+gtk-theme-name=$target_theme
+gtk-application-prefer-dark-theme=$prefer_dark
+EOF
 }
 
 sync_theme
 
-gsettings monitor "$schema" color-scheme | while read -r _; do
+gsettings monitor "$interface_schema" color-scheme | while read -r _; do
   sync_theme
 done
