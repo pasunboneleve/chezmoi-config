@@ -8,6 +8,32 @@ fi
 
 export PATH="$HOME/.local/bin:$HOME/.bun/bin:$HOME/go/bin:$PATH"
 
+if [ -n "${NO_COLOR:-}" ]; then
+  red=""
+  reset=""
+else
+  red=$'\033[31m'
+  reset=$'\033[0m'
+fi
+
+colorize_errors() {
+  awk -v red="$red" -v reset="$reset" '
+    /^(Error:|Failed|No match|Problem:|Cannot|You can try)/ {
+      print red $0 reset
+      next
+    }
+    { print }
+  '
+}
+
+run_with_colored_errors() {
+  set +e
+  "$@" 2>&1 | colorize_errors
+  local status="${PIPESTATUS[0]}"
+  set -e
+  return "$status"
+}
+
 install_from_script() {
   local name="$1"
   local url="$2"
@@ -64,34 +90,28 @@ configure_xremap_permissions() {
 if command -v dnf >/dev/null 2>&1; then
   sudo dnf -y copr enable blakegardner/xremap
 
-  fedora_packages=(
-    chezmoi
-    cargo
-    direnv
-    emacs
-    git
-    git-filter-repo
-    golang
-    ghostty
-    levien-inconsolata-fonts
-    nodejs
-    npm
-    openssl-devel
-    pkgconf-pkg-config
-    python-uv
-    ripgrep
-    rust
-    unzip
-    xremap-gnome
-    zsh
-    zsh-autosuggestions
+  run_with_colored_errors sudo dnf install -y \
+    chezmoi \
+    cargo \
+    direnv \
+    emacs \
+    git \
+    git-filter-repo \
+    golang \
+    ghostty \
+    levien-inconsolata-fonts \
+    nodejs \
+    npm \
+    openssl-devel \
+    pkgconf-pkg-config \
+    python-uv \
+    ripgrep \
+    rust \
+    unzip \
+    xremap-gnome \
+    zsh \
+    zsh-autosuggestions \
     zsh-syntax-highlighting
-  )
-
-  for package in "${fedora_packages[@]}"; do
-    printf 'Installing Fedora package: %s\n' "$package"
-    sudo dnf install -y "$package"
-  done
 
   configure_xremap_permissions
 fi
