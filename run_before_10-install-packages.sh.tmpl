@@ -64,31 +64,40 @@ configure_xremap_permissions() {
 if command -v dnf >/dev/null 2>&1; then
   sudo dnf -y copr enable blakegardner/xremap
 
-  sudo dnf install -y \
-    chezmoi \
-    cargo \
-    direnv \
-    emacs \
-    git \
-    git-filter-repo \
-    golang \
-    ghostty \
-    levien-inconsolata-fonts \
-    nodejs \
-    npm \
-    openssl-devel \
-    pkgconf-pkg-config \
-    python3-docx \
-    python-uv \
-    ripgrep \
-    rust \
-    unzip \
-    xremap-gnome \
-    zsh \
-    zsh-autosuggestions \
+  fedora_packages=(
+    chezmoi
+    cargo
+    direnv
+    emacs
+    git
+    git-filter-repo
+    golang
+    ghostty
+    levien-inconsolata-fonts
+    nodejs
+    npm
+    openssl-devel
+    pkgconf-pkg-config
+    python-uv
+    ripgrep
+    rust
+    unzip
+    xremap-gnome
+    zsh
+    zsh-autosuggestions
     zsh-syntax-highlighting
+  )
+
+  for package in "${fedora_packages[@]}"; do
+    printf 'Installing Fedora package: %s\n' "$package"
+    sudo dnf install -y "$package"
+  done
 
   configure_xremap_permissions
+fi
+
+if ! command -v kata >/dev/null 2>&1; then
+  go install github.com/wesm/kata/cmd/kata@latest
 fi
 
 if ! command -v starship >/dev/null 2>&1; then
