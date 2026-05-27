@@ -6,7 +6,7 @@ if [ "${CHEZMOI_INSTALL_PACKAGES:-0}" != "1" ]; then
   exit 0
 fi
 
-export PATH="$HOME/.local/bin:$HOME/.bun/bin:$HOME/go/bin:$PATH"
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/go/bin:$PATH"
 
 if [ -n "${NO_COLOR:-}" ]; then
   red=""
@@ -66,6 +66,87 @@ install_js_package() {
 
   echo "$package requires bun. Set CHEZMOI_USE_NPM_FOR_JS_PACKAGES=1 to allow npm instead."
   exit 1
+}
+
+ensure_rust_toolchain() {
+  if command -v rustup >/dev/null 2>&1; then
+    rustup update
+    return
+  fi
+
+  if command -v cargo >/dev/null 2>&1; then
+    return
+  fi
+
+  local installer
+  installer="$(mktemp)"
+  curl -fsSL https://sh.rustup.rs -o "$installer"
+  echo "Installing Rust with rustup"
+  sh "$installer" -y --no-modify-path
+  rm -f "$installer"
+}
+
+ensure_emacs() {
+  if command -v emacs >/dev/null 2>&1; then
+    echo "Emacs is already installed."
+    return
+  fi
+
+  if command -v dnf >/dev/null 2>&1; then
+    echo "Installing Emacs with dnf."
+    run_with_colored_errors sudo dnf install -y emacs
+    return
+  fi
+
+  if command -v brew >/dev/null 2>&1; then
+    echo "Installing Emacs with Homebrew."
+    brew install emacs
+    return
+  fi
+
+  echo "emacs is not installed, and neither dnf nor brew is available to install it."
+  exit 1
+}
+
+ensure_emacs_config() {
+  local config_dir="$HOME/.config/emacs"
+
+  if [ -d "$config_dir/.git" ]; then
+    echo "Updating Emacs config in $config_dir."
+    git -C "$config_dir" pull --ff-only
+    return
+  fi
+
+  if [ -e "$config_dir" ]; then
+    echo "$config_dir exists but is not a git checkout."
+    exit 1
+  fi
+
+  mkdir -p "$(dirname "$config_dir")"
+  echo "Cloning Emacs config into $config_dir."
+  git clone git@github.com:pasunboneleve/emacs.d.git "$config_dir"
+}
+
+install_emacs_packages() {
+  local config_dir="$HOME/.config/emacs"
+  local -a emacs_args
+
+  ensure_emacs
+  ensure_emacs_config
+
+  emacs_args=(--batch)
+
+  if [ -f "$config_dir/early-init.el" ]; then
+    emacs_args+=(--load "$config_dir/early-init.el")
+  fi
+
+  emacs_args+=(--load "$config_dir/init.el")
+  emacs_args+=(--eval "(elpaca-update-menus)")
+  emacs_args+=(--eval "(elpaca-wait)")
+
+  echo "Running Emacs batch setup for Elpaca packages."
+  emacs "${emacs_args[@]}"
+  echo "Emacs batch setup completed."
 }
 
 {{ if eq .chezmoi.os "linux" -}}
@@ -144,6 +225,8 @@ if ! command -v skilpel >/dev/null 2>&1; then
   go install github.com/pasunboneleve/skilpel/cmd/skilpel@latest
 fi
 
+ensure_rust_toolchain
+
 if ! command -v rumdl >/dev/null 2>&1; then
   cargo install rumdl
 fi
@@ -157,7 +240,7 @@ if ! command -v typst >/dev/null 2>&1; then
 fi
 
 if ! command -v tinymist >/dev/null 2>&1; then
-  cargo install --git https://github.com/Myriad-Dreamin/tinymist --locked tinymist-cli
+  cargo install --git ssh://git@github.com/Myriad-Dreamin/tinymist.git --locked tinymist-cli
 fi
 
 if ! command -v pyright-langserver >/dev/null 2>&1; then
@@ -194,19 +277,19 @@ plugin_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
 mkdir -p "$plugin_dir"
 
 if [ ! -d "$plugin_dir/zsh-autocomplete/.git" ]; then
-  git clone https://github.com/marlonrichert/zsh-autocomplete.git "$plugin_dir/zsh-autocomplete"
+  git clone git@github.com:marlonrichert/zsh-autocomplete.git "$plugin_dir/zsh-autocomplete"
 fi
 
 if [ ! -d "$plugin_dir/zsh-completions/.git" ]; then
-  git clone https://github.com/zsh-users/zsh-completions.git "$plugin_dir/zsh-completions"
+  git clone git@github.com:zsh-users/zsh-completions.git "$plugin_dir/zsh-completions"
 fi
 
 if [ ! -d "$plugin_dir/zsh-history-substring-search/.git" ]; then
-  git clone https://github.com/zsh-users/zsh-history-substring-search.git "$plugin_dir/zsh-history-substring-search"
+  git clone git@github.com:zsh-users/zsh-history-substring-search.git "$plugin_dir/zsh-history-substring-search"
 fi
 
 if [ ! -d "$plugin_dir/zsh-z/.git" ]; then
-  git clone https://github.com/agkozak/zsh-z.git "$plugin_dir/zsh-z"
+  git clone git@github.com:agkozak/zsh-z.git "$plugin_dir/zsh-z"
 fi
 
 plugin_bin="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/bin"
@@ -223,6 +306,8 @@ for executable in "$plugin_dir"/*/* "$HOME/.local/share/zinit/plugins"/*/*; do
   esac
   ln -sfn "$executable" "$plugin_bin/$name"
 done
+
+install_emacs_packages
 {{ else if eq .chezmoi.os "darwin" -}}
 if command -v brew >/dev/null 2>&1; then
   brew install \
@@ -275,6 +360,8 @@ if ! command -v skilpel >/dev/null 2>&1; then
   go install github.com/pasunboneleve/skilpel/cmd/skilpel@latest
 fi
 
+ensure_rust_toolchain
+
 if ! command -v rumdl >/dev/null 2>&1; then
   cargo install rumdl
 fi
@@ -288,7 +375,7 @@ if ! command -v typst >/dev/null 2>&1; then
 fi
 
 if ! command -v tinymist >/dev/null 2>&1; then
-  cargo install --git https://github.com/Myriad-Dreamin/tinymist --locked tinymist-cli
+  cargo install --git ssh://git@github.com/Myriad-Dreamin/tinymist.git --locked tinymist-cli
 fi
 
 if ! command -v pyright-langserver >/dev/null 2>&1; then
@@ -323,7 +410,7 @@ plugin_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
 mkdir -p "$plugin_dir"
 
 if [ ! -d "$plugin_dir/zsh-z/.git" ]; then
-  git clone https://github.com/agkozak/zsh-z.git "$plugin_dir/zsh-z"
+  git clone git@github.com:agkozak/zsh-z.git "$plugin_dir/zsh-z"
 fi
 
 plugin_bin="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/bin"
@@ -337,4 +424,6 @@ for executable in "$plugin_dir"/*/*; do
   esac
   ln -sfn "$executable" "$plugin_bin/$name"
 done
+
+install_emacs_packages
 {{ end -}}

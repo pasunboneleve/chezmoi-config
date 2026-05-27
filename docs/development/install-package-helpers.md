@@ -60,6 +60,54 @@ The helper prefers `bun install -g`. It falls back to `npm install -g` only when
 
 There are no current JavaScript package installs. Add future calls near the other language-specific tool installs in each operating-system branch.
 
+## `ensure_rust_toolchain`
+
+Use `ensure_rust_toolchain` before any `cargo install` calls. It updates Rust when `rustup` is available, leaves package-manager Rust installations alone when `cargo` already exists, and installs Rust with `rustup` only when neither `rustup` nor `cargo` is present.
+
+```bash
+ensure_rust_toolchain
+
+if ! command -v tool >/dev/null 2>&1; then
+  cargo install tool
+fi
+```
+
+The script adds `~/.cargo/bin` to `PATH` before this helper runs, so tools installed by rustup are available later in the same bootstrap run.
+
+## `ensure_emacs`
+
+Use `ensure_emacs` before any Emacs batch command. The helper returns when `emacs` is already on `PATH`, otherwise it installs Emacs with the same package manager used by the operating-system branch: `dnf` on Linux, or Homebrew on macOS.
+
+```bash
+ensure_emacs
+```
+
+The helper exits with an error when Emacs is missing and neither `dnf` nor `brew` is available.
+
+## `ensure_emacs_config`
+
+Use `ensure_emacs_config` before running Emacs against the personal config. It keeps `~/.config/emacs` present as a Git checkout of `git@github.com:pasunboneleve/emacs.d.git`.
+
+```bash
+ensure_emacs_config
+```
+
+If the checkout exists, the helper updates it with `git pull --ff-only`. If `~/.config/emacs` exists but is not a Git checkout, it exits instead of overwriting local files.
+
+All GitHub clones in this repository should use SSH URLs, matching [`AGENTS.md`](../../AGENTS.md).
+
+## `install_emacs_packages`
+
+Use `install_emacs_packages` after every other install step in the operating-system branch. It ensures Emacs is installed, ensures the config checkout exists, then runs Emacs in batch mode to update Elpaca menus and wait for queued package work.
+
+```bash
+install_emacs_packages
+```
+
+Keep this call at the end of each branch so Emacs sees tools installed earlier in the bootstrap run.
+
+Keep the progress messages around Emacs install, config sync, and batch setup. The Elpaca step can take long enough that the bootstrap should say which phase is running.
+
 ## `configure_xremap_permissions`
 
 Use `configure_xremap_permissions` only in the Linux branch before or after installing `xremap-gnome`. It owns the local system setup needed for user-level xremap services:
