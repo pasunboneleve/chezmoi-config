@@ -117,7 +117,7 @@ if command -v dnf >/dev/null 2>&1; then
 fi
 
 if ! command -v kata >/dev/null 2>&1; then
-  go install github.com/wesm/kata/cmd/kata@latest
+  go install go.kenn.io/kata/cmd/kata@latest
 fi
 
 if ! command -v starship >/dev/null 2>&1; then
@@ -140,7 +140,13 @@ if ! command -v bd >/dev/null 2>&1; then
   install_from_script beads https://raw.githubusercontent.com/gastownhall/beads/main/scripts/install.sh
 fi
 
-install_js_package agent-skills-eval agent-skills-eval
+if ! command -v skilpel >/dev/null 2>&1; then
+  go install github.com/pasunboneleve/skilpel/cmd/skilpel@latest
+fi
+
+if ! command -v rumdl >/dev/null 2>&1; then
+  cargo install rumdl
+fi
 
 if ! command -v emacs-lsp-booster >/dev/null 2>&1; then
   cargo install emacs-lsp-booster
@@ -265,7 +271,13 @@ if ! command -v bd >/dev/null 2>&1; then
   install_from_script beads https://raw.githubusercontent.com/gastownhall/beads/main/scripts/install.sh
 fi
 
-install_js_package agent-skills-eval agent-skills-eval
+if ! command -v skilpel >/dev/null 2>&1; then
+  go install github.com/pasunboneleve/skilpel/cmd/skilpel@latest
+fi
+
+if ! command -v rumdl >/dev/null 2>&1; then
+  cargo install rumdl
+fi
 
 if ! command -v emacs-lsp-booster >/dev/null 2>&1; then
   cargo install emacs-lsp-booster

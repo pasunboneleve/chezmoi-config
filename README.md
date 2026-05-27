@@ -25,6 +25,9 @@ Package installation is opt-in:
 CHEZMOI_INSTALL_PACKAGES=1 chezmoi --source . apply
 ```
 
+Installer helper usage is documented in
+[docs/development/install-package-helpers.md](docs/development/install-package-helpers.md).
+
 On Fedora, `dnf` installs the zsh plugins it packages
 (`zsh-autosuggestions` and `zsh-syntax-highlighting`). The install script
 clones `zsh-autocomplete`, `zsh-completions`, `zsh-history-substring-search`,
