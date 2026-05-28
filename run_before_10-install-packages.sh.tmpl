@@ -225,6 +225,10 @@ if ! command -v skilpel >/dev/null 2>&1; then
   go install github.com/pasunboneleve/skilpel/cmd/skilpel@latest
 fi
 
+if ! command -v rush >/dev/null 2>&1; then
+  go install github.com/shenwei356/rush@latest
+fi
+
 ensure_rust_toolchain
 
 if ! command -v rumdl >/dev/null 2>&1; then
@@ -358,6 +362,10 @@ fi
 
 if ! command -v skilpel >/dev/null 2>&1; then
   go install github.com/pasunboneleve/skilpel/cmd/skilpel@latest
+fi
+
+if ! command -v rush >/dev/null 2>&1; then
+  go install github.com/shenwei356/rush@latest
 fi
 
 ensure_rust_toolchain
