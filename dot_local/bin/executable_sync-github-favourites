@@ -2,10 +2,8 @@
 set -euo pipefail
 
 expected_dir="${HOME}/src/projects"
-expected_real="$(cd "${expected_dir}" && pwd -P)"
-current_real="$(pwd -P)"
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-repo_list="${1:-"${script_dir}/github-favourites.txt"}"
+config_dir="${XDG_CONFIG_HOME:-"${HOME}/.config"}/dotfiles"
+repo_list="${1:-"${config_dir}/github-favourites.txt"}"
 
 warn() {
   printf 'warning: %s\n' "$*" >&2
@@ -20,8 +18,52 @@ require_command() {
   fi
 }
 
+print_usage() {
+  cat >&2 <<EOF
+Usage: sync-github-favourites [repo-list]
+
+Clone or update GitHub repositories listed one per line as owner/repo.
+Blank lines and lines starting with # are ignored.
+
+Default repo list:
+  ${config_dir}/github-favourites.txt
+
+Example:
+  mkdir -p ~/.config/dotfiles
+  cat > ~/.config/dotfiles/github-favourites.txt <<'LIST'
+  pasunboneleve/chezmoi-config
+  pasunboneleve/emacs.d
+  LIST
+  cd ~/src/projects
+  sync-github-favourites
+EOF
+}
+
 confirm_directory() {
+  local current_real
+  local expected_real
   local reply
+
+  current_real="$(pwd -P)"
+
+  if [[ ! -d "${expected_dir}" ]]; then
+    printf 'Expected project directory does not exist: %s\n' "${expected_dir}" >&2
+    printf 'Create it before syncing favourites, or run from another directory and confirm the prompt.\n' >&2
+    printf 'Proceed in %s anyway? [y/N] ' "${current_real}" >&2
+    read -r reply
+
+    case "${reply}" in
+      y | Y | yes | YES)
+        return 0
+        ;;
+      *)
+        printf 'Aborted.\n' >&2
+        exit 1
+        ;;
+    esac
+  fi
+
+  expected_real="$(cd "${expected_dir}" && pwd -P)"
 
   if [[ "${current_real}" == "${expected_real}" ]]; then
     return 0
@@ -85,12 +127,14 @@ sync_repo() {
 
 main() {
   require_command git
-  confirm_directory
 
   if [[ ! -f "${repo_list}" ]]; then
-    printf 'error: repository list not found: %s\n' "${repo_list}" >&2
+    printf 'error: repository list not found: %s\n\n' "${repo_list}" >&2
+    print_usage
     exit 1
   fi
+
+  confirm_directory
 
   if [[ ! -s "${repo_list}" ]]; then
     printf 'No repositories listed in %s.\n' "${repo_list}"
