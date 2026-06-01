@@ -16,7 +16,9 @@ Use plain commands when the package manager already reports errors clearly. Use 
 
 ## `colorize_errors`
 
-`colorize_errors` reads command output on standard input and highlights common package-manager error lines. Do not call it directly for ordinary install commands; call it through `run_with_colored_errors` so the original command status is preserved.
+`colorize_errors` reads command output on standard input and highlights common warning and error lines. Errors are red; warnings are yellow. It covers package-manager output, Emacs memory failures, timeout failures, and chezmoi script errors.
+
+Do not call it directly for ordinary install commands; call it through `run_with_colored_errors` so the original command status is preserved.
 
 ```bash
 some_command 2>&1 | colorize_errors
@@ -95,6 +97,22 @@ ensure_emacs_config
 If the checkout exists, the helper updates it with `git pull --ff-only`. If `~/.config/emacs` exists but is not a Git checkout, it exits instead of overwriting local files.
 
 All GitHub clones in this repository should use SSH URLs, matching [`AGENTS.md`](../../AGENTS.md).
+
+## Emacs Batch Resource Controls
+
+The Emacs batch setup reduces peak memory use instead of killing Emacs. It does this in two ways:
+
+- sets `elpaca-queue-limit` before loading the config, defaulting to one package build at a time;
+- sets `NATIVE_DISABLED=1` by default, so package installation byte-compiles without native-compiling.
+
+Override those defaults with:
+
+```bash
+CHEZMOI_ELPACA_QUEUE_LIMIT=2
+CHEZMOI_EMACS_BATCH_NATIVE_DISABLED=0
+```
+
+Increase the queue limit only on machines with enough memory for parallel package builds. Enable native compilation only when the extra memory use is acceptable during bootstrap.
 
 ## `install_emacs_packages`
 

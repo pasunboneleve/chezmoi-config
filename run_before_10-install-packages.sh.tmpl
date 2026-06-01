@@ -10,16 +10,22 @@ export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/go/bin:$PATH
 
 if [ -n "${NO_COLOR:-}" ]; then
   red=""
+  yellow=""
   reset=""
 else
   red=$'\033[31m'
+  yellow=$'\033[33m'
   reset=$'\033[0m'
 fi
 
 colorize_errors() {
-  awk -v red="$red" -v reset="$reset" '
-    /^(Error:|Failed|No match|Problem:|Cannot|You can try)/ {
+  awk -v red="$red" -v yellow="$yellow" -v reset="$reset" '
+    /(^|[[:space:]])(Error:|error:|Failed|failed|No match|Problem:|Cannot|Memory exhausted|Killed|timeout:|chezmoi:)/ {
       print red $0 reset
+      next
+    }
+    /(^|[[:space:]])(Warning:|warning:|WARNING:|warn:|Please note|quality may vary|not part of the main distribution)/ {
+      print yellow $0 reset
       next
     }
     { print }
@@ -129,12 +135,25 @@ ensure_emacs_config() {
 
 install_emacs_packages() {
   local config_dir="$HOME/.config/emacs"
+  local elpaca_queue_limit="${CHEZMOI_ELPACA_QUEUE_LIMIT:-1}"
+  local native_disabled="${CHEZMOI_EMACS_BATCH_NATIVE_DISABLED:-1}"
   local -a emacs_args
 
   ensure_emacs
   ensure_emacs_config
 
+  if [[ "$elpaca_queue_limit" == *[!0-9]* ]]; then
+    echo "CHEZMOI_ELPACA_QUEUE_LIMIT must be a number."
+    exit 1
+  fi
+
+  if [ "$native_disabled" != "0" ] && [ "$native_disabled" != "1" ]; then
+    echo "CHEZMOI_EMACS_BATCH_NATIVE_DISABLED must be 0 or 1."
+    exit 1
+  fi
+
   emacs_args=(--batch)
+  emacs_args+=(--eval "(setq elpaca-queue-limit $elpaca_queue_limit)")
 
   if [ -f "$config_dir/early-init.el" ]; then
     emacs_args+=(--load "$config_dir/early-init.el")
@@ -145,7 +164,16 @@ install_emacs_packages() {
   emacs_args+=(--eval "(elpaca-wait)")
 
   echo "Running Emacs batch setup for Elpaca packages."
-  emacs "${emacs_args[@]}"
+  echo "Running Elpaca with queue limit $elpaca_queue_limit."
+  if [ "$native_disabled" = "1" ]; then
+    echo "Disabling native compilation during Emacs batch setup."
+    (
+      export NATIVE_DISABLED=1
+      run_with_colored_errors emacs "${emacs_args[@]}"
+    )
+  else
+    run_with_colored_errors emacs "${emacs_args[@]}"
+  fi
   echo "Emacs batch setup completed."
 }
 
