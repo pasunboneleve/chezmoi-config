@@ -62,6 +62,20 @@ The helper prefers `bun install -g`. It falls back to `npm install -g` only when
 
 There are no current JavaScript package installs. Add future calls near the other language-specific tool installs in each operating-system branch.
 
+## `ensure_gh_extension`
+
+Use `ensure_gh_extension` for GitHub CLI extensions after `gh` has been
+installed by the operating-system package branch. Pass the extension command
+name without the `gh` prefix, then the repository URL to install.
+
+```bash
+ensure_gh_extension example ssh://git@github.com/owner/gh-example.git
+```
+
+Use SSH URLs for GitHub-hosted extensions, matching
+[`AGENTS.md`](../../AGENTS.md). The helper checks `gh extension list` first and
+installs only when the extension command is missing.
+
 ## `ensure_rust_toolchain`
 
 Use `ensure_rust_toolchain` before any `cargo install` calls. It updates Rust when `rustup` is available, leaves package-manager Rust installations alone when `cargo` already exists, and installs Rust with `rustup` only when neither `rustup` nor `cargo` is present.

@@ -74,6 +74,17 @@ install_js_package() {
   exit 1
 }
 
+ensure_gh_extension() {
+  local extension="$1"
+  local repository="$2"
+
+  if gh extension list | awk '{ print $1 " " $2 }' | grep -qx "gh $extension"; then
+    return
+  fi
+
+  gh extension install "$repository"
+}
+
 ensure_rust_toolchain() {
   if command -v rustup >/dev/null 2>&1; then
     rustup update
@@ -204,6 +215,7 @@ if command -v dnf >/dev/null 2>&1; then
     cargo \
     direnv \
     emacs \
+    gh \
     git \
     git-filter-repo \
     golang \
@@ -228,6 +240,8 @@ fi
 if ! command -v kata >/dev/null 2>&1; then
   go install go.kenn.io/kata/cmd/kata@latest
 fi
+
+ensure_gh_extension markdown-preview ssh://git@github.com/yusukebe/gh-markdown-preview.git
 
 if ! command -v starship >/dev/null 2>&1; then
   echo "starship is not available from the enabled Fedora repos; install it separately."
@@ -346,6 +360,7 @@ if command -v brew >/dev/null 2>&1; then
     chezmoi \
     direnv \
     emacs \
+    gh \
     git \
     git-filter-repo \
     go \
@@ -395,6 +410,8 @@ fi
 if ! command -v rush >/dev/null 2>&1; then
   go install github.com/shenwei356/rush@latest
 fi
+
+ensure_gh_extension markdown-preview ssh://git@github.com/yusukebe/gh-markdown-preview.git
 
 ensure_rust_toolchain
 
