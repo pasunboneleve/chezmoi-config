@@ -34,6 +34,8 @@ CHEZMOI_SKIP_EMACS_CONFIG=1 chezmoi --source . apply
 
 Installer helper usage is documented in
 [docs/development/install-package-helpers.md](docs/development/install-package-helpers.md).
+External dotfile checkout ownership is documented in
+[docs/development/external-dotfiles.md](docs/development/external-dotfiles.md).
 
 On Fedora, `dnf` installs the zsh plugins it packages
 (`zsh-autosuggestions` and `zsh-syntax-highlighting`). The install script
@@ -44,17 +46,19 @@ packaged zsh plugins directly.
 
 ## Managed Highlights
 
-- `~/.zshrc`
-- `~/.zshenv`
+- `~/.config/dotfiles` from `github.com/pasunboneleve/dotfiles`
+- `~/.zshrc` and `~/.zshenv`, symlinked into `~/.config/dotfiles`
 - `~/.gitconfig`
-- `~/.config/ghostty/config`
-- `~/.config/starship.toml`
+- `~/.config/ghostty/config`, symlinked into `~/.config/dotfiles`
+- `~/.config/starship.toml`, symlinked into `~/.config/dotfiles`
+- `~/.ghci`, symlinked into `~/.config/dotfiles`
+- `~/.config/direnv/direnvrc`, symlinked into `~/.config/dotfiles`
 - `~/.config/emacs` from `github.com/pasunboneleve/emacs.d`
-- Linux-only `~/.config/xremap/xremap.yml`
+- Linux-only `~/.config/xremap/xremap.yml`, symlinked into `~/.config/dotfiles`
 - Linux-only user services:
   - `emacs.service`
   - `sync-gtk-theme-to-gnome.service`
-  - `xremap.service`
+  - `xremap.service`, symlinked into `~/.config/dotfiles`
   These are enabled idempotently on every `chezmoi apply`.
 - Linux-only Emacs client desktop entry
 

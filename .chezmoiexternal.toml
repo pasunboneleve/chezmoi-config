@@ -4,3 +4,8 @@ type = "git-repo"
 url = "git@github.com:pasunboneleve/emacs.d.git"
 refreshPeriod = "168h"
 {{- end }}
+
+[".config/dotfiles"]
+type = "git-repo"
+url = "git@github.com:pasunboneleve/dotfiles.git"
+refreshPeriod = "168h"
