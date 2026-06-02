@@ -25,6 +25,10 @@ Package installation is opt-in:
 CHEZMOI_INSTALL_PACKAGES=1 chezmoi --source . apply
 ```
 
+On Fedora, package installation includes `zsh`. When `zsh` is installed,
+chezmoi changes the account's default shell to `zsh`. Start a new login session
+after the first successful shell change.
+
 Agent or service users that cannot access the private Emacs config repository
 can skip that external checkout and the Emacs batch setup:
 
@@ -48,6 +52,7 @@ packaged zsh plugins directly.
 
 - `~/.config/dotfiles` from `github.com/pasunboneleve/dotfiles`
 - `~/.zshrc` and `~/.zshenv`, symlinked into `~/.config/dotfiles`
+- default login shell set to `zsh`
 - `~/.gitconfig`
 - `~/.config/ghostty/config`, symlinked into `~/.config/dotfiles`
 - `~/.config/starship.toml`, symlinked into `~/.config/dotfiles`

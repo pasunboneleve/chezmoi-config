@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+zsh_path="$(command -v zsh || true)"
+
+if [[ -z "$zsh_path" ]]; then
+  echo "Skipping default shell change: zsh is not installed. Set CHEZMOI_INSTALL_PACKAGES=1 and apply again to install packages first."
+  exit 0
+fi
+
+current_shell=""
+
+{{ if eq .chezmoi.os "darwin" -}}
+if command -v dscl >/dev/null 2>&1; then
+  current_shell="$(dscl . -read "/Users/$USER" UserShell 2>/dev/null | awk '{print $2}')"
+fi
+{{ else if eq .chezmoi.os "linux" -}}
+if command -v getent >/dev/null 2>&1; then
+  current_shell="$(getent passwd "$USER" | cut -d: -f7)"
+fi
+{{ end -}}
+
+if [[ "$current_shell" == "$zsh_path" ]]; then
+  echo "Default shell is already $zsh_path."
+  exit 0
+fi
+
+if ! command -v chsh >/dev/null 2>&1; then
+  echo "Cannot set default shell: chsh is not installed." >&2
+  exit 1
+fi
+
+if chsh -s "$zsh_path" "$USER"; then
+  echo "Changed default shell to $zsh_path. Start a new login session for it to take effect."
+else
+  echo "Failed to change default shell to $zsh_path." >&2
+  exit 1
+fi
