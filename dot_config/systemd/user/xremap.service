@@ -1,0 +1,13 @@
+[Unit]
+Description=Start xremap
+
+[Service]
+Type=exec
+TimeoutStartSec=30
+WorkingDirectory=%h
+StandardOutput=journal
+ExecStart=xremap %h/.config/xremap/xremap.yml
+Restart=always
+
+[Install]
+WantedBy=default.target

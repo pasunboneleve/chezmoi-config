@@ -58,7 +58,7 @@ packaged zsh plugins directly.
 - Linux-only user services:
   - `emacs.service`
   - `sync-gtk-theme-to-gnome.service`
-  - `xremap.service`, symlinked into `~/.config/dotfiles`
+  - `xremap.service`
   These are enabled idempotently on every `chezmoi apply`.
 - Linux-only Emacs client desktop entry
 

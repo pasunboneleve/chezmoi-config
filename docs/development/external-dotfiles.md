@@ -18,14 +18,15 @@ Current symlinked targets:
 - `~/.config/ghostty/config` -> `~/.config/dotfiles/ghostty`
 - `~/.config/direnv/direnvrc` -> `~/.config/dotfiles/direnvrc`
 - `~/.config/xremap/xremap.yml` -> `~/.config/dotfiles/xremap.yml`
-- `~/.config/systemd/user/xremap.service` -> `~/.config/dotfiles/xremap.service`
 
-The xremap targets are Linux-only because xremap services are ignored on other
-operating systems.
+The xremap config target is Linux-only because xremap is ignored on other
+operating systems. The `xremap.service` unit itself is managed by this chezmoi
+source, not by the external dotfiles checkout, because new-machine bootstrap
+must install user units before enabling them.
 
-The Linux user-service bootstrap skips `xremap.service` when the unit symlink is
-missing or broken. If that happens, make sure `~/.config/dotfiles` was cloned
-successfully and contains `xremap.service`, then run `chezmoi apply` again.
+If `xremap.service` starts but cannot read its config, make sure
+`~/.config/dotfiles` was cloned successfully and contains `xremap.yml`, then run
+`chezmoi apply` again.
 
 The `z` command comes from the `zsh-z` plugin. It is not a dotfiles payload, so
 there is no symlink target for it here. The package installer clones
