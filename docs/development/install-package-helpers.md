@@ -114,19 +114,21 @@ All GitHub clones in this repository should use SSH URLs, matching [`AGENTS.md`]
 
 ## Emacs Batch Resource Controls
 
-The Emacs batch setup reduces peak memory use instead of killing Emacs. It does this in two ways:
+The Emacs batch setup reduces peak memory use and bounds stalled runs with these controls:
 
 - sets `elpaca-queue-limit` before loading the config, defaulting to one package build at a time;
 - sets `NATIVE_DISABLED=1` by default, so package installation byte-compiles without native-compiling.
+- wraps the batch run in `timeout` or `gtimeout`, defaulting to 30 minutes, so a stalled Elpaca wait fails visibly.
 
 Override those defaults with:
 
 ```bash
 CHEZMOI_ELPACA_QUEUE_LIMIT=2
 CHEZMOI_EMACS_BATCH_NATIVE_DISABLED=0
+CHEZMOI_EMACS_BATCH_TIMEOUT=1h
 ```
 
-Increase the queue limit only on machines with enough memory for parallel package builds. Enable native compilation only when the extra memory use is acceptable during bootstrap.
+Increase the queue limit only on machines with enough memory for parallel package builds. Enable native compilation only when the extra memory use is acceptable during bootstrap. Increase the timeout only when the batch process is still producing package, build, or network activity.
 
 ## `install_emacs_packages`
 

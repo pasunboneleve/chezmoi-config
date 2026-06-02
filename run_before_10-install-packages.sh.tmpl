@@ -148,10 +148,23 @@ install_emacs_packages() {
   local config_dir="$HOME/.config/emacs"
   local elpaca_queue_limit="${CHEZMOI_ELPACA_QUEUE_LIMIT:-1}"
   local native_disabled="${CHEZMOI_EMACS_BATCH_NATIVE_DISABLED:-1}"
+  # Bound the Emacs batch phase so an idle Elpaca wait fails instead of
+  # leaving the whole chezmoi apply blocked indefinitely.
+  local emacs_batch_timeout="${CHEZMOI_EMACS_BATCH_TIMEOUT:-30m}"
+  local timeout_command
   local -a emacs_args
 
   ensure_emacs
   ensure_emacs_config
+
+  if command -v timeout >/dev/null 2>&1; then
+    timeout_command="timeout"
+  elif command -v gtimeout >/dev/null 2>&1; then
+    timeout_command="gtimeout"
+  else
+    echo "Emacs batch setup requires timeout or gtimeout."
+    exit 1
+  fi
 
   if [[ "$elpaca_queue_limit" == *[!0-9]* ]]; then
     echo "CHEZMOI_ELPACA_QUEUE_LIMIT must be a number."
@@ -160,6 +173,11 @@ install_emacs_packages() {
 
   if [ "$native_disabled" != "0" ] && [ "$native_disabled" != "1" ]; then
     echo "CHEZMOI_EMACS_BATCH_NATIVE_DISABLED must be 0 or 1."
+    exit 1
+  fi
+
+  if [[ ! "$emacs_batch_timeout" =~ ^[0-9]+[smhd]?$ ]]; then
+    echo "CHEZMOI_EMACS_BATCH_TIMEOUT must be a timeout value such as 900, 15m, or 1h."
     exit 1
   fi
 
@@ -176,14 +194,17 @@ install_emacs_packages() {
 
   echo "Running Emacs batch setup for Elpaca packages."
   echo "Running Elpaca with queue limit $elpaca_queue_limit."
+  echo "Emacs batch setup timeout is $emacs_batch_timeout."
   if [ "$native_disabled" = "1" ]; then
     echo "Disabling native compilation during Emacs batch setup."
     (
+      # The Emacs config reads this flag to skip native compilation and
+      # per-package Elpaca waits during the bootstrap run.
       export NATIVE_DISABLED=1
-      run_with_colored_errors emacs "${emacs_args[@]}"
+      run_with_colored_errors "$timeout_command" --foreground "$emacs_batch_timeout" emacs "${emacs_args[@]}"
     )
   else
-    run_with_colored_errors emacs "${emacs_args[@]}"
+    run_with_colored_errors "$timeout_command" --foreground "$emacs_batch_timeout" emacs "${emacs_args[@]}"
   fi
   echo "Emacs batch setup completed."
 }
@@ -358,6 +379,7 @@ install_emacs_packages
 if command -v brew >/dev/null 2>&1; then
   brew install \
     chezmoi \
+    coreutils \
     direnv \
     emacs \
     gh \
