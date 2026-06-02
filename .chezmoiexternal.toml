@@ -1,4 +1,6 @@
+{{- if ne (env "CHEZMOI_SKIP_EMACS_CONFIG") "1" }}
 [".config/emacs"]
 type = "git-repo"
 url = "git@github.com:pasunboneleve/emacs.d.git"
 refreshPeriod = "168h"
+{{- end }}

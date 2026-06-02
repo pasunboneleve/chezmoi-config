@@ -138,6 +138,11 @@ Use `install_emacs_packages` after every other install step in the operating-sys
 install_emacs_packages
 ```
 
+Set `CHEZMOI_SKIP_EMACS_CONFIG=1` to skip the personal Emacs config checkout
+and batch setup. Use this for agent or service users that need language tools
+from the package installer but do not have SSH access to the private Emacs
+config repository.
+
 Keep this call at the end of each branch so Emacs sees tools installed earlier in the bootstrap run.
 
 Keep the progress messages around Emacs install, config sync, and batch setup. The Elpaca step can take long enough that the bootstrap should say which phase is running.

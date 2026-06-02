@@ -25,6 +25,13 @@ Package installation is opt-in:
 CHEZMOI_INSTALL_PACKAGES=1 chezmoi --source . apply
 ```
 
+Agent or service users that cannot access the private Emacs config repository
+can skip that external checkout and the Emacs batch setup:
+
+```sh
+CHEZMOI_SKIP_EMACS_CONFIG=1 chezmoi --source . apply
+```
+
 Installer helper usage is documented in
 [docs/development/install-package-helpers.md](docs/development/install-package-helpers.md).
 

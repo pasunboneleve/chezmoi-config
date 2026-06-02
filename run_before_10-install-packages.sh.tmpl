@@ -8,6 +8,8 @@ fi
 
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/go/bin:$PATH"
 
+skip_emacs_config="${CHEZMOI_SKIP_EMACS_CONFIG:-0}"
+
 if [ -n "${NO_COLOR:-}" ]; then
   red=""
   yellow=""
@@ -193,6 +195,11 @@ install_emacs_packages() {
   local emacs_batch_timeout="${CHEZMOI_EMACS_BATCH_TIMEOUT:-30m}"
   local timeout_command
   local -a emacs_args
+
+  if [ "$skip_emacs_config" = "1" ]; then
+    echo "Skipping Emacs config setup because CHEZMOI_SKIP_EMACS_CONFIG=1."
+    return
+  fi
 
   ensure_emacs
   ensure_emacs_config
