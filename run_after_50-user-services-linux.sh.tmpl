@@ -8,9 +8,15 @@ enable_service() {
   local service="$1"
   local required_command="${2:-}"
   local action="${3:-start}"
+  local unit_path="$HOME/.config/systemd/user/$service"
 
   if [[ -n "$required_command" ]] && ! command -v "$required_command" >/dev/null 2>&1; then
     echo "Skipping $service: $required_command is not installed."
+    return 0
+  fi
+
+  if [[ ! -e "$unit_path" ]]; then
+    echo "Skipping $service: $unit_path is missing."
     return 0
   fi
 
