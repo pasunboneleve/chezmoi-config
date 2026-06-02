@@ -22,3 +22,8 @@ Current symlinked targets:
 
 The xremap targets are Linux-only because xremap services are ignored on other
 operating systems.
+
+The `z` command comes from the `zsh-z` plugin. It is not a dotfiles payload, so
+there is no symlink target for it here. The package installer clones
+`zsh-z` into `~/.local/share/zsh/plugins` when the operating-system package
+branch does not install it directly.
