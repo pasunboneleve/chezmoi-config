@@ -127,9 +127,49 @@ ensure_emacs() {
 
 ensure_emacs_config() {
   local config_dir="$HOME/.config/emacs"
+  local current_branch
+  local github_owner="pasunboneleve"
+  local remote
+  local remote_url
+  local upstream
 
   if [ -d "$config_dir/.git" ]; then
     echo "Updating Emacs config in $config_dir."
+    if ! git -C "$config_dir" rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
+      current_branch="$(git -C "$config_dir" branch --show-current)"
+      if [ -z "$current_branch" ]; then
+        echo "$config_dir is on a detached HEAD and cannot track a github.com/$github_owner main branch."
+        exit 1
+      fi
+
+      for remote in origin pasunboneleve $(git -C "$config_dir" remote); do
+        if [ -n "${upstream:-}" ]; then
+          break
+        fi
+
+        if ! git -C "$config_dir" remote get-url "$remote" >/dev/null 2>&1; then
+          continue
+        fi
+
+        remote_url="$(git -C "$config_dir" remote get-url "$remote")"
+        case "$remote_url" in
+          git@github.com:"$github_owner"/*|ssh://git@github.com/"$github_owner"/*|https://github.com/"$github_owner"/*) ;;
+          *) continue ;;
+        esac
+
+        if git -C "$config_dir" fetch "$remote" "+refs/heads/main:refs/remotes/$remote/main"; then
+          upstream="$remote/main"
+        fi
+      done
+
+      if [ -z "${upstream:-}" ]; then
+        echo "$config_dir has no github.com/$github_owner remote main branch to track."
+        exit 1
+      fi
+
+      echo "Setting upstream for $current_branch to $upstream."
+      git -C "$config_dir" branch --set-upstream-to="$upstream" "$current_branch"
+    fi
     git -C "$config_dir" pull --ff-only
     return
   fi
