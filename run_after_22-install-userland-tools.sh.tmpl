@@ -53,7 +53,7 @@ ensure_rust_toolchain() {
   . "$HOME/.cargo/env"
 }
 
-install_npm_tool() {
+install_bun_tool() {
   local executable="$1"
   local package="$2"
 
@@ -61,7 +61,7 @@ install_npm_tool() {
     return
   fi
 
-  npm install -g "$package"
+  bun add -g "$package"
 }
 
 install_claude_cli() {
@@ -69,7 +69,7 @@ install_claude_cli() {
     return
   fi
 
-  npm install -g @anthropic-ai/claude-code
+  bun add -g @anthropic-ai/claude-code
 }
 
 latest_github_tag() {
@@ -473,8 +473,14 @@ if ! command -v pyright-langserver >/dev/null 2>&1; then
   uv tool install pyright
 fi
 
-install_npm_tool codex @openai/codex
-install_npm_tool gemini @google/gemini-cli
+if ! command -v codex >/dev/null 2>&1; then
+  install-codex-latest
+fi
+
+if ! command -v agy >/dev/null 2>&1; then
+  curl -fsSL https://antigravity.google/cli/install.sh | bash
+fi
+
 install_claude_cli
 
 ensure_gh_extension markdown-preview ssh://git@github.com/yusukebe/gh-markdown-preview.git

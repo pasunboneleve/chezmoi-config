@@ -6,7 +6,7 @@ Userland installers that do not need system package-manager privileges belong
 in normal `run_after_*` hooks. In particular,
 [`run_after_22-install-userland-tools.sh.tmpl`](../../run_after_22-install-userland-tools.sh.tmpl)
 owns Node through nvm, Rust through rustup, prebuilt release binaries,
-Go/Cargo/npm/uv-installed CLIs, and remote script installers such as Roborev and
+Go/Cargo/Bun/uv-installed CLIs, and remote script installers such as Roborev and
 Beads.
 
 ## Adding Install Steps
@@ -58,7 +58,7 @@ fi
 ```
 
 Prefer prebuilt release binaries when a project publishes them. Otherwise use
-`go install`, `cargo install`, `npm install -g`, or `uv tool install` when the
+`go install`, `cargo install`, `bun add -g`, or `uv tool install` when the
 project provides one. Remote installer scripts are harder to audit, so keep each
 call behind an executable check.
 
