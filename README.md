@@ -25,6 +25,10 @@ Package installation is opt-in:
 CHEZMOI_INSTALL_PACKAGES=1 chezmoi --source . apply
 ```
 
+Normal `chezmoi --source . apply` also runs userland tool installers for tools
+that do not need system package-manager privileges, including Rust, Node,
+language CLIs, and AI/developer CLIs.
+
 On Fedora, package installation includes `zsh`. When `zsh` is installed,
 chezmoi changes the account's default shell to `zsh`. Start a new login session
 after the first successful shell change.

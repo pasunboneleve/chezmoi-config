@@ -42,69 +42,6 @@ run_with_colored_errors() {
   return "$status"
 }
 
-install_from_script() {
-  local name="$1"
-  local url="$2"
-  local installer
-
-  installer="$(mktemp)"
-  curl -fsSL "$url" -o "$installer"
-  echo "Installing $name from $url"
-  bash "$installer"
-  rm -f "$installer"
-}
-
-install_js_package() {
-  local executable="$1"
-  local package="$2"
-
-  if command -v "$executable" >/dev/null 2>&1; then
-    return
-  fi
-
-  if command -v bun >/dev/null 2>&1; then
-    bun install -g "$package"
-    return
-  fi
-
-  if [ "${CHEZMOI_USE_NPM_FOR_JS_PACKAGES:-0}" = "1" ] && command -v npm >/dev/null 2>&1; then
-    npm install -g "$package"
-    return
-  fi
-
-  echo "$package requires bun. Set CHEZMOI_USE_NPM_FOR_JS_PACKAGES=1 to allow npm instead."
-  exit 1
-}
-
-ensure_gh_extension() {
-  local extension="$1"
-  local repository="$2"
-
-  if gh extension list | awk '{ print $1 " " $2 }' | grep -qx "gh $extension"; then
-    return
-  fi
-
-  gh extension install "$repository"
-}
-
-ensure_rust_toolchain() {
-  if command -v rustup >/dev/null 2>&1; then
-    rustup update
-    return
-  fi
-
-  if command -v cargo >/dev/null 2>&1; then
-    return
-  fi
-
-  local installer
-  installer="$(mktemp)"
-  curl -fsSL https://sh.rustup.rs -o "$installer"
-  echo "Installing Rust with rustup"
-  sh "$installer" -y --no-modify-path
-  rm -f "$installer"
-}
-
 ensure_emacs() {
   if command -v emacs >/dev/null 2>&1; then
     echo "Emacs is already installed."
@@ -280,7 +217,6 @@ if command -v dnf >/dev/null 2>&1; then
 
   run_with_colored_errors sudo dnf install -y \
     chezmoi \
-    cargo \
     direnv \
     emacs \
     gh \
@@ -289,13 +225,9 @@ if command -v dnf >/dev/null 2>&1; then
     golang \
     ghostty \
     levien-inconsolata-fonts \
-    nodejs \
-    npm \
     openssl-devel \
     pkgconf-pkg-config \
-    python-uv \
     ripgrep \
-    rust \
     unzip \
     xremap-gnome \
     zsh \
@@ -305,121 +237,9 @@ if command -v dnf >/dev/null 2>&1; then
   configure_xremap_permissions
 fi
 
-if ! command -v kata >/dev/null 2>&1; then
-  go install go.kenn.io/kata/cmd/kata@latest
-fi
-
-ensure_gh_extension markdown-preview ssh://git@github.com/yusukebe/gh-markdown-preview.git
-
 if ! command -v starship >/dev/null 2>&1; then
   echo "starship is not available from the enabled Fedora repos; install it separately."
 fi
-
-if ! command -v bun >/dev/null 2>&1; then
-  install_from_script bun https://bun.com/install
-fi
-
-if ! command -v uv >/dev/null 2>&1; then
-  install_from_script uv https://astral.sh/uv/install.sh
-fi
-
-if ! command -v roborev >/dev/null 2>&1; then
-  install_from_script roborev https://roborev.io/install.sh
-fi
-
-if ! command -v bd >/dev/null 2>&1; then
-  install_from_script beads https://raw.githubusercontent.com/gastownhall/beads/main/scripts/install.sh
-fi
-
-if ! command -v skilpel >/dev/null 2>&1; then
-  go install github.com/pasunboneleve/skilpel/cmd/skilpel@latest
-fi
-
-if ! command -v rush >/dev/null 2>&1; then
-  go install github.com/shenwei356/rush@latest
-fi
-
-ensure_rust_toolchain
-
-if ! command -v rumdl >/dev/null 2>&1; then
-  cargo install rumdl
-fi
-
-if ! command -v emacs-lsp-booster >/dev/null 2>&1; then
-  cargo install emacs-lsp-booster
-fi
-
-if ! command -v typst >/dev/null 2>&1; then
-  cargo install --locked typst-cli
-fi
-
-if ! command -v tinymist >/dev/null 2>&1; then
-  cargo install --git ssh://git@github.com/Myriad-Dreamin/tinymist.git --locked tinymist-cli
-fi
-
-if ! command -v pyright-langserver >/dev/null 2>&1; then
-  uv tool install pyright
-fi
-
-icon_font_dir="${XDG_DATA_HOME:-$HOME/.local/share}/fonts/all-the-icons"
-mkdir -p "$icon_font_dir"
-for font in \
-  all-the-icons.ttf \
-  file-icons.ttf \
-  fontawesome.ttf \
-  material-design-icons.ttf \
-  octicons.ttf \
-  weathericons.ttf; do
-  if [ ! -f "$icon_font_dir/$font" ]; then
-    curl -fsSL \
-      "https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/$font" \
-      -o "$icon_font_dir/$font"
-  fi
-done
-fc-cache -f "$icon_font_dir"
-
-nerd_icon_font_dir="${XDG_DATA_HOME:-$HOME/.local/share}/fonts/nerd-icons"
-mkdir -p "$nerd_icon_font_dir"
-if [ ! -f "$nerd_icon_font_dir/NFM.ttf" ]; then
-  curl -fsSL \
-    "https://raw.githubusercontent.com/rainstormstudio/nerd-icons.el/main/fonts/NFM.ttf" \
-    -o "$nerd_icon_font_dir/NFM.ttf"
-fi
-fc-cache -f "$nerd_icon_font_dir"
-
-plugin_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
-mkdir -p "$plugin_dir"
-
-if [ ! -d "$plugin_dir/zsh-autocomplete/.git" ]; then
-  git clone git@github.com:marlonrichert/zsh-autocomplete.git "$plugin_dir/zsh-autocomplete"
-fi
-
-if [ ! -d "$plugin_dir/zsh-completions/.git" ]; then
-  git clone git@github.com:zsh-users/zsh-completions.git "$plugin_dir/zsh-completions"
-fi
-
-if [ ! -d "$plugin_dir/zsh-history-substring-search/.git" ]; then
-  git clone git@github.com:zsh-users/zsh-history-substring-search.git "$plugin_dir/zsh-history-substring-search"
-fi
-
-if [ ! -d "$plugin_dir/zsh-z/.git" ]; then
-  git clone git@github.com:agkozak/zsh-z.git "$plugin_dir/zsh-z"
-fi
-
-plugin_bin="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/bin"
-mkdir -p "$plugin_bin"
-for executable in "$plugin_dir"/*/* "$HOME/.local/share/zinit/plugins"/*/*; do
-  [ -f "$executable" ] || continue
-  [ -x "$executable" ] || continue
-  case "$executable" in
-    */zinit-annex-*/*|*/zdharma-continuum---zinit-annex-*/*) continue ;;
-  esac
-  name="$(basename "$executable")"
-  case "$name" in
-    .*|*.plugin.zsh|*.zsh|*.zwc|*.png|*.md|test-*|run-tests*) continue ;;
-  esac
-  ln -sfn "$executable" "$plugin_bin/$name"
-done
 
 install_emacs_packages
 {{ else if eq .chezmoi.os "darwin" -}}
@@ -433,18 +253,10 @@ if command -v brew >/dev/null 2>&1; then
     git \
     git-filter-repo \
     go \
-    node \
     openssl@3 \
     pkg-config \
     ripgrep \
-    roborev-dev/tap/roborev \
-    rust \
     starship \
-    tinymist \
-    typst \
-    uv \
-    beads \
-    bun \
     zsh \
     zsh-autocomplete \
     zsh-autosuggestions \
@@ -455,97 +267,6 @@ if command -v brew >/dev/null 2>&1; then
     font-inconsolata \
     ghostty
 fi
-
-if ! command -v bun >/dev/null 2>&1; then
-  install_from_script bun https://bun.com/install
-fi
-
-if ! command -v uv >/dev/null 2>&1; then
-  install_from_script uv https://astral.sh/uv/install.sh
-fi
-
-if ! command -v roborev >/dev/null 2>&1; then
-  install_from_script roborev https://roborev.io/install.sh
-fi
-
-if ! command -v bd >/dev/null 2>&1; then
-  install_from_script beads https://raw.githubusercontent.com/gastownhall/beads/main/scripts/install.sh
-fi
-
-if ! command -v skilpel >/dev/null 2>&1; then
-  go install github.com/pasunboneleve/skilpel/cmd/skilpel@latest
-fi
-
-if ! command -v rush >/dev/null 2>&1; then
-  go install github.com/shenwei356/rush@latest
-fi
-
-ensure_gh_extension markdown-preview ssh://git@github.com/yusukebe/gh-markdown-preview.git
-
-ensure_rust_toolchain
-
-if ! command -v rumdl >/dev/null 2>&1; then
-  cargo install rumdl
-fi
-
-if ! command -v emacs-lsp-booster >/dev/null 2>&1; then
-  cargo install emacs-lsp-booster
-fi
-
-if ! command -v typst >/dev/null 2>&1; then
-  cargo install --locked typst-cli
-fi
-
-if ! command -v tinymist >/dev/null 2>&1; then
-  cargo install --git ssh://git@github.com/Myriad-Dreamin/tinymist.git --locked tinymist-cli
-fi
-
-if ! command -v pyright-langserver >/dev/null 2>&1; then
-  uv tool install pyright
-fi
-
-icon_font_dir="$HOME/Library/Fonts/all-the-icons"
-mkdir -p "$icon_font_dir"
-for font in \
-  all-the-icons.ttf \
-  file-icons.ttf \
-  fontawesome.ttf \
-  material-design-icons.ttf \
-  octicons.ttf \
-  weathericons.ttf; do
-  if [ ! -f "$icon_font_dir/$font" ]; then
-    curl -fsSL \
-      "https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/$font" \
-      -o "$icon_font_dir/$font"
-  fi
-done
-
-nerd_icon_font_dir="$HOME/Library/Fonts/nerd-icons"
-mkdir -p "$nerd_icon_font_dir"
-if [ ! -f "$nerd_icon_font_dir/NFM.ttf" ]; then
-  curl -fsSL \
-    "https://raw.githubusercontent.com/rainstormstudio/nerd-icons.el/main/fonts/NFM.ttf" \
-    -o "$nerd_icon_font_dir/NFM.ttf"
-fi
-
-plugin_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
-mkdir -p "$plugin_dir"
-
-if [ ! -d "$plugin_dir/zsh-z/.git" ]; then
-  git clone git@github.com:agkozak/zsh-z.git "$plugin_dir/zsh-z"
-fi
-
-plugin_bin="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/bin"
-mkdir -p "$plugin_bin"
-for executable in "$plugin_dir"/*/*; do
-  [ -f "$executable" ] || continue
-  [ -x "$executable" ] || continue
-  name="$(basename "$executable")"
-  case "$name" in
-    .*|*.plugin.zsh|*.zsh|*.zwc|*.png|*.md|test-*|run-tests*) continue ;;
-  esac
-  ln -sfn "$executable" "$plugin_bin/$name"
-done
 
 install_emacs_packages
 {{ end -}}

@@ -1,10 +1,17 @@
 # Install Package Helpers
 
-[`run_before_10-install-packages.sh.tmpl`](../../run_before_10-install-packages.sh.tmpl) is a [chezmoi](https://www.chezmoi.io/) script template. The script exits unless `CHEZMOI_INSTALL_PACKAGES=1` is set, so helper calls should be safe to rerun during normal `chezmoi --source . apply`.
+[`run_before_10-install-packages.sh.tmpl`](../../run_before_10-install-packages.sh.tmpl) is a [chezmoi](https://www.chezmoi.io/) script template for system package-manager work. It exits unless `CHEZMOI_INSTALL_PACKAGES=1` is set.
+
+Userland installers that do not need system package-manager privileges belong
+in normal `run_after_*` hooks. In particular,
+[`run_after_22-install-userland-tools.sh.tmpl`](../../run_after_22-install-userland-tools.sh.tmpl)
+owns Node through nvm, Rust through rustup, prebuilt release binaries,
+Go/Cargo/npm/uv-installed CLIs, and remote script installers such as Roborev and
+Beads.
 
 ## Adding Install Steps
 
-Place new install steps in the operating-system branch that owns the dependency. Keep each step idempotent by checking the executable or target file first.
+Place system package steps in the operating-system branch that owns the dependency. Place userland tools in a normal `run_after_*` hook. Keep each step idempotent by checking the executable or target file first.
 
 ```bash
 if ! command -v example >/dev/null 2>&1; then
@@ -12,7 +19,7 @@ if ! command -v example >/dev/null 2>&1; then
 fi
 ```
 
-Use plain commands when the package manager already reports errors clearly. Use the helpers below when they preserve a repeated pattern.
+Use plain commands when the package manager already reports errors clearly. Use helper functions when they preserve a repeated pattern.
 
 ## `colorize_errors`
 
@@ -38,9 +45,11 @@ run_with_colored_errors sudo dnf install -y \
 
 Do not wrap the command in a quoted string. The helper executes the arguments as a command, pipes combined output through `colorize_errors`, and returns the original command status.
 
-## `install_from_script`
+## Userland Remote Installers
 
-Use `install_from_script` only for installers that are intentionally distributed as remote shell scripts. Pass a display name and the installer URL.
+Use `install_from_script` only in userland hooks and only for tools that are
+intentionally distributed as remote shell scripts. Pass a display name and the
+installer URL.
 
 ```bash
 if ! command -v tool >/dev/null 2>&1; then
@@ -48,25 +57,16 @@ if ! command -v tool >/dev/null 2>&1; then
 fi
 ```
 
-Prefer a package manager or `go install` when the project provides one. Remote installer scripts are harder to audit, so keep each call behind an executable check.
-
-## `install_js_package`
-
-Use `install_js_package` for global [Bun](https://bun.sh/) or `npm` packages that expose an executable on `PATH`. The first argument is the executable to check; the second is the package name to install.
-
-```bash
-install_js_package some-command some-package
-```
-
-The helper prefers `bun install -g`. It falls back to `npm install -g` only when `CHEZMOI_USE_NPM_FOR_JS_PACKAGES=1` is set and `npm` is available.
-
-There are no current JavaScript package installs. Add future calls near the other language-specific tool installs in each operating-system branch.
+Prefer prebuilt release binaries when a project publishes them. Otherwise use
+`go install`, `cargo install`, `npm install -g`, or `uv tool install` when the
+project provides one. Remote installer scripts are harder to audit, so keep each
+call behind an executable check.
 
 ## `ensure_gh_extension`
 
-Use `ensure_gh_extension` for GitHub CLI extensions after `gh` has been
-installed by the operating-system package branch. Pass the extension command
-name without the `gh` prefix, then the repository URL to install.
+Use `ensure_gh_extension` for GitHub CLI extensions from userland hooks. Pass
+the extension command name without the `gh` prefix, then the repository URL to
+install.
 
 ```bash
 ensure_gh_extension example ssh://git@github.com/owner/gh-example.git
@@ -74,11 +74,14 @@ ensure_gh_extension example ssh://git@github.com/owner/gh-example.git
 
 Use SSH URLs for GitHub-hosted extensions, matching
 [`AGENTS.md`](../../AGENTS.md). The helper checks `gh extension list` first and
-installs only when the extension command is missing.
+installs only when the extension command is missing. If `gh` is not installed,
+the userland hook should skip the extension with a visible message.
 
 ## `ensure_rust_toolchain`
 
-Use `ensure_rust_toolchain` before any `cargo install` calls. It updates Rust when `rustup` is available, leaves package-manager Rust installations alone when `cargo` already exists, and installs Rust with `rustup` only when neither `rustup` nor `cargo` is present.
+Use `ensure_rust_toolchain` in userland hooks before any `cargo install` calls.
+It updates Rust when `rustup` is available and installs Rust with rustup when it
+is missing.
 
 ```bash
 ensure_rust_toolchain
@@ -88,7 +91,8 @@ if ! command -v tool >/dev/null 2>&1; then
 fi
 ```
 
-The script adds `~/.cargo/bin` to `PATH` before this helper runs, so tools installed by rustup are available later in the same bootstrap run.
+The userland hook adds `~/.cargo/bin` to `PATH` before this helper runs, so
+tools installed by rustup are available later in the same bootstrap run.
 
 ## `ensure_emacs`
 

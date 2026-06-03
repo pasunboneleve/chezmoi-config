@@ -1,0 +1,482 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/go/bin:$PATH"
+
+install_from_script() {
+  local name="$1"
+  local url="$2"
+  local installer
+
+  installer="$(mktemp)"
+  curl -fsSL "$url" -o "$installer"
+  echo "Installing $name from $url"
+  bash "$installer"
+  rm -f "$installer"
+}
+
+ensure_nvm() {
+  export NVM_DIR="$HOME/.nvm"
+
+  if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+    echo "Installing nvm."
+    PROFILE=/dev/null bash -c \
+      "$(curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh)"
+  fi
+
+  # shellcheck disable=SC1091
+  . "$NVM_DIR/nvm.sh"
+}
+
+ensure_node() {
+  ensure_nvm
+  nvm install --lts
+  nvm alias default 'lts/*'
+}
+
+ensure_rust_toolchain() {
+  export PATH="$HOME/.cargo/bin:$PATH"
+
+  if command -v rustup >/dev/null 2>&1; then
+    rustup update
+    return
+  fi
+
+  local installer
+  installer="$(mktemp)"
+  curl -fsSL https://sh.rustup.rs -o "$installer"
+  echo "Installing Rust with rustup"
+  sh "$installer" -y --no-modify-path
+  rm -f "$installer"
+
+  # shellcheck disable=SC1091
+  . "$HOME/.cargo/env"
+}
+
+install_npm_tool() {
+  local executable="$1"
+  local package="$2"
+
+  if command -v "$executable" >/dev/null 2>&1; then
+    return
+  fi
+
+  npm install -g "$package"
+}
+
+install_claude_cli() {
+  if command -v claude >/dev/null 2>&1 || command -v claude-cli >/dev/null 2>&1; then
+    return
+  fi
+
+  npm install -g @anthropic-ai/claude-code
+}
+
+latest_github_tag() {
+  local repository="$1"
+  local tag
+
+  tag="$(
+    curl -fsSL "https://api.github.com/repos/$repository/releases/latest" \
+      | sed -n 's/^[[:space:]]*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' \
+      | head -n 1
+  )"
+
+  if [ -z "$tag" ]; then
+    echo "Could not determine latest release tag for $repository." >&2
+    exit 1
+  fi
+
+  printf '%s\n' "$tag"
+}
+
+github_latest_download_url() {
+  local repository="$1"
+  local asset="$2"
+
+  printf 'https://github.com/%s/releases/latest/download/%s\n' "$repository" "$asset"
+}
+
+github_tag_download_url() {
+  local repository="$1"
+  local tag="$2"
+  local asset="$3"
+
+  printf 'https://github.com/%s/releases/download/%s/%s\n' "$repository" "$tag" "$asset"
+}
+
+install_github_binary_asset() {
+  local executable="$1"
+  local repository="$2"
+  local asset="$3"
+  local url
+
+  if command -v "$executable" >/dev/null 2>&1; then
+    return
+  fi
+
+  url="$(github_latest_download_url "$repository" "$asset")"
+  echo "Installing $executable from $url"
+  mkdir -p "$HOME/.local/bin"
+  curl -fL "$url" -o "$HOME/.local/bin/$executable"
+  chmod 0755 "$HOME/.local/bin/$executable"
+}
+
+install_github_archive_binary_url() {
+  local executable="$1"
+  local url="$2"
+  local archive
+  local binary
+  local tmpdir
+
+  if command -v "$executable" >/dev/null 2>&1; then
+    return
+  fi
+
+  tmpdir="$(mktemp -d)"
+  archive="$tmpdir/asset"
+
+  echo "Installing $executable from $url"
+  curl -fL "$url" -o "$archive"
+  tar -xf "$archive" -C "$tmpdir"
+
+  binary=""
+  while IFS= read -r candidate; do
+    if [ -x "$candidate" ]; then
+      binary="$candidate"
+      break
+    fi
+  done < <(find "$tmpdir" -type f -name "$executable")
+
+  if [ -z "$binary" ]; then
+    echo "Could not find $executable in $url." >&2
+    rm -rf "$tmpdir"
+    exit 1
+  fi
+
+  mkdir -p "$HOME/.local/bin"
+  install -m 0755 "$binary" "$HOME/.local/bin/$executable"
+  rm -rf "$tmpdir"
+}
+
+install_github_archive_binary_asset() {
+  local executable="$1"
+  local repository="$2"
+  local asset="$3"
+  local url
+
+  url="$(github_latest_download_url "$repository" "$asset")"
+  install_github_archive_binary_url "$executable" "$url"
+}
+
+install_cargo_tool() {
+  local executable="$1"
+  shift
+
+  if command -v "$executable" >/dev/null 2>&1; then
+    return
+  fi
+
+  cargo install "$@"
+}
+
+install_go_tool() {
+  local executable="$1"
+  local package="$2"
+
+  if command -v "$executable" >/dev/null 2>&1; then
+    return
+  fi
+
+  if ! command -v go >/dev/null 2>&1; then
+    echo "$executable requires go. Run CHEZMOI_INSTALL_PACKAGES=1 chezmoi apply to install system packages first." >&2
+    exit 1
+  fi
+
+  go install "$package"
+}
+
+install_devloop() {
+  case "$(uname -s):$(uname -m)" in
+    Linux:x86_64)
+      install_github_archive_binary_asset \
+        devloop \
+        pasunboneleve/devloop \
+        devloop-x86_64-unknown-linux-gnu.tar.gz
+      ;;
+    Darwin:arm64|Darwin:aarch64)
+      install_github_archive_binary_asset \
+        devloop \
+        pasunboneleve/devloop \
+        devloop-aarch64-apple-darwin.tar.gz
+      ;;
+    *)
+      echo "Skipping devloop: unsupported platform $(uname -s):$(uname -m)."
+      ;;
+  esac
+}
+
+install_dress_rehearsal() {
+  case "$(uname -s):$(uname -m)" in
+    Linux:x86_64)
+      install_github_archive_binary_asset \
+        dress \
+        pasunboneleve/dress-rehearsal \
+        dress-rehearsal-x86_64-unknown-linux-gnu.tar.gz
+      ;;
+    Darwin:arm64|Darwin:aarch64)
+      install_github_archive_binary_asset \
+        dress \
+        pasunboneleve/dress-rehearsal \
+        dress-rehearsal-aarch64-apple-darwin.tar.gz
+      ;;
+    *)
+      echo "Skipping dress-rehearsal: unsupported platform $(uname -s):$(uname -m)."
+      ;;
+  esac
+}
+
+install_skilpel() {
+  case "$(uname -s):$(uname -m)" in
+    Linux:x86_64)
+      install_github_binary_asset skilpel pasunboneleve/skilpel skilpel-linux-amd64
+      ;;
+    Darwin:arm64|Darwin:aarch64)
+      install_github_binary_asset skilpel pasunboneleve/skilpel skilpel-darwin-arm64
+      ;;
+    *)
+      echo "Skipping skilpel: unsupported platform $(uname -s):$(uname -m)."
+      ;;
+  esac
+}
+
+install_rush() {
+  case "$(uname -s):$(uname -m)" in
+    Linux:x86_64)
+      install_github_archive_binary_asset rush shenwei356/rush rush_linux_amd64.tar.gz
+      ;;
+    Darwin:arm64|Darwin:aarch64)
+      install_github_archive_binary_asset rush shenwei356/rush rush_darwin_arm64.tar.gz
+      ;;
+    Darwin:x86_64)
+      install_github_archive_binary_asset rush shenwei356/rush rush_darwin_amd64.tar.gz
+      ;;
+    *)
+      echo "Skipping rush: unsupported platform $(uname -s):$(uname -m)."
+      ;;
+  esac
+}
+
+install_rumdl() {
+  local tag
+  local url
+
+  tag="$(latest_github_tag rvben/rumdl)"
+  case "$(uname -s):$(uname -m)" in
+    Linux:x86_64)
+      url="$(github_tag_download_url rvben/rumdl "$tag" "rumdl-${tag}-x86_64-unknown-linux-gnu.tar.gz")"
+      ;;
+    Darwin:arm64|Darwin:aarch64)
+      url="$(github_tag_download_url rvben/rumdl "$tag" "rumdl-${tag}-aarch64-apple-darwin.tar.gz")"
+      ;;
+    Darwin:x86_64)
+      url="$(github_tag_download_url rvben/rumdl "$tag" "rumdl-${tag}-x86_64-apple-darwin.tar.gz")"
+      ;;
+    *)
+      echo "Skipping rumdl: unsupported platform $(uname -s):$(uname -m)."
+      return
+      ;;
+  esac
+  install_github_archive_binary_url rumdl "$url"
+}
+
+install_typst() {
+  case "$(uname -s):$(uname -m)" in
+    Linux:x86_64)
+      install_github_archive_binary_asset typst typst/typst typst-x86_64-unknown-linux-musl.tar.xz
+      ;;
+    Darwin:arm64|Darwin:aarch64)
+      install_github_archive_binary_asset typst typst/typst typst-aarch64-apple-darwin.tar.xz
+      ;;
+    Darwin:x86_64)
+      install_github_archive_binary_asset typst typst/typst typst-x86_64-apple-darwin.tar.xz
+      ;;
+    *)
+      echo "Skipping typst: unsupported platform $(uname -s):$(uname -m)."
+      ;;
+  esac
+}
+
+install_tinymist() {
+  case "$(uname -s):$(uname -m)" in
+    Linux:x86_64)
+      install_github_archive_binary_asset \
+        tinymist \
+        Myriad-Dreamin/tinymist \
+        tinymist-x86_64-unknown-linux-gnu.tar.gz
+      ;;
+    Darwin:arm64|Darwin:aarch64)
+      install_github_archive_binary_asset \
+        tinymist \
+        Myriad-Dreamin/tinymist \
+        tinymist-aarch64-apple-darwin.tar.gz
+      ;;
+    Darwin:x86_64)
+      install_github_archive_binary_asset \
+        tinymist \
+        Myriad-Dreamin/tinymist \
+        tinymist-x86_64-apple-darwin.tar.gz
+      ;;
+    *)
+      echo "Skipping tinymist: unsupported platform $(uname -s):$(uname -m)."
+      ;;
+  esac
+}
+
+install_icon_fonts() {
+  {{ if eq .chezmoi.os "darwin" -}}
+  local all_the_icons_dir="$HOME/Library/Fonts/all-the-icons"
+  local nerd_icons_dir="$HOME/Library/Fonts/nerd-icons"
+  {{ else -}}
+  local all_the_icons_dir="${XDG_DATA_HOME:-$HOME/.local/share}/fonts/all-the-icons"
+  local nerd_icons_dir="${XDG_DATA_HOME:-$HOME/.local/share}/fonts/nerd-icons"
+  {{ end -}}
+
+  mkdir -p "$all_the_icons_dir"
+  for font in \
+    all-the-icons.ttf \
+    file-icons.ttf \
+    fontawesome.ttf \
+    material-design-icons.ttf \
+    octicons.ttf \
+    weathericons.ttf; do
+    if [ ! -f "$all_the_icons_dir/$font" ]; then
+      curl -fsSL \
+        "https://raw.githubusercontent.com/domtronn/all-the-icons.el/master/fonts/$font" \
+        -o "$all_the_icons_dir/$font"
+    fi
+  done
+
+  mkdir -p "$nerd_icons_dir"
+  if [ ! -f "$nerd_icons_dir/NFM.ttf" ]; then
+    curl -fsSL \
+      "https://raw.githubusercontent.com/rainstormstudio/nerd-icons.el/main/fonts/NFM.ttf" \
+      -o "$nerd_icons_dir/NFM.ttf"
+  fi
+
+  {{ if eq .chezmoi.os "linux" -}}
+  if command -v fc-cache >/dev/null 2>&1; then
+    fc-cache -f "$all_the_icons_dir"
+    fc-cache -f "$nerd_icons_dir"
+  fi
+  {{ end -}}
+}
+
+install_zsh_plugins() {
+  if ! command -v git >/dev/null 2>&1; then
+    echo "Skipping zsh plugin checkout: git is not installed."
+    return
+  fi
+
+  local plugin_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
+  local plugin_bin="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/bin"
+  local executable
+  local name
+
+  mkdir -p "$plugin_dir"
+
+  {{ if eq .chezmoi.os "linux" -}}
+  if [ ! -d "$plugin_dir/zsh-autocomplete/.git" ]; then
+    git clone git@github.com:marlonrichert/zsh-autocomplete.git "$plugin_dir/zsh-autocomplete"
+  fi
+
+  if [ ! -d "$plugin_dir/zsh-completions/.git" ]; then
+    git clone git@github.com:zsh-users/zsh-completions.git "$plugin_dir/zsh-completions"
+  fi
+
+  if [ ! -d "$plugin_dir/zsh-history-substring-search/.git" ]; then
+    git clone git@github.com:zsh-users/zsh-history-substring-search.git "$plugin_dir/zsh-history-substring-search"
+  fi
+  {{ end -}}
+
+  if [ ! -d "$plugin_dir/zsh-z/.git" ]; then
+    git clone git@github.com:agkozak/zsh-z.git "$plugin_dir/zsh-z"
+  fi
+
+  mkdir -p "$plugin_bin"
+  {{ if eq .chezmoi.os "linux" -}}
+  for executable in "$plugin_dir"/*/* "$HOME/.local/share/zinit/plugins"/*/*; do
+  {{ else -}}
+  for executable in "$plugin_dir"/*/*; do
+  {{ end -}}
+    [ -f "$executable" ] || continue
+    [ -x "$executable" ] || continue
+    case "$executable" in
+      */zinit-annex-*/*|*/zdharma-continuum---zinit-annex-*/*) continue ;;
+    esac
+    name="$(basename "$executable")"
+    case "$name" in
+      .*|*.plugin.zsh|*.zsh|*.zwc|*.png|*.md|test-*|run-tests*) continue ;;
+    esac
+    ln -sfn "$executable" "$plugin_bin/$name"
+  done
+}
+
+ensure_gh_extension() {
+  local extension="$1"
+  local repository="$2"
+
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "Skipping gh $extension: gh is not installed."
+    return
+  fi
+
+  if gh extension list | awk '{ print $1 " " $2 }' | grep -qx "gh $extension"; then
+    return
+  fi
+
+  gh extension install "$repository"
+}
+
+ensure_node
+
+if ! command -v bun >/dev/null 2>&1; then
+  install_from_script bun https://bun.com/install
+fi
+
+if ! command -v uv >/dev/null 2>&1; then
+  install_from_script uv https://astral.sh/uv/install.sh
+fi
+
+if ! command -v roborev >/dev/null 2>&1; then
+  install_from_script roborev https://roborev.io/install.sh
+fi
+
+if ! command -v bd >/dev/null 2>&1; then
+  install_from_script beads https://raw.githubusercontent.com/gastownhall/beads/main/scripts/install.sh
+fi
+
+install_go_tool kata go.kenn.io/kata/cmd/kata@latest
+install_skilpel
+install_rush
+install_devloop
+install_dress_rehearsal
+install_typst
+install_tinymist
+install_rumdl
+
+ensure_rust_toolchain
+
+install_cargo_tool emacs-lsp-booster emacs-lsp-booster
+
+if ! command -v pyright-langserver >/dev/null 2>&1; then
+  uv tool install pyright
+fi
+
+install_npm_tool codex @openai/codex
+install_npm_tool gemini @google/gemini-cli
+install_claude_cli
+
+ensure_gh_extension markdown-preview ssh://git@github.com/yusukebe/gh-markdown-preview.git
+install_icon_fonts
+install_zsh_plugins
