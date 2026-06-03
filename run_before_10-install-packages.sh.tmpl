@@ -331,6 +331,10 @@ if ! command -v bd >/dev/null 2>&1; then
   install_from_script beads https://raw.githubusercontent.com/gastownhall/beads/main/scripts/install.sh
 fi
 
+if ! command -v hx >/dev/null 2>&1; then
+  install_from_script hx https://get.arcanist.sh/hx
+fi
+
 if ! command -v skilpel >/dev/null 2>&1; then
   go install github.com/pasunboneleve/skilpel/cmd/skilpel@latest
 fi
