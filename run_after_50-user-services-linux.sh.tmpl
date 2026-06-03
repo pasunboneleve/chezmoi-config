@@ -2,6 +2,8 @@
 set -euo pipefail
 
 {{ if eq .chezmoi.os "linux" -}}
+export PATH="$HOME/.local/bin:$HOME/go/bin:$PATH"
+
 failed=0
 
 enable_service() {
@@ -39,6 +41,8 @@ if command -v systemctl >/dev/null 2>&1; then
   enable_service sync-gtk-theme-to-gnome.service gsettings restart
   enable_service emacs.service emacs
   enable_service xremap.service xremap-gnome
+  enable_service kata.service kata
+  enable_service roborev.service roborev
 else
   echo "Skipping user services: systemctl is not installed."
 fi

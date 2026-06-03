@@ -1,0 +1,12 @@
+[Unit]
+Description=Kata issue tracker daemon
+After=default.target
+
+[Service]
+Type=exec
+ExecStart=%h/go/bin/kata daemon start
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

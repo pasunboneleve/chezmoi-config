@@ -66,6 +66,8 @@ packaged zsh plugins directly.
 - Linux-only `~/.config/xremap/xremap.yml`, symlinked into `~/.config/dotfiles`
 - Linux-only user services:
   - `emacs.service`
+  - `kata.service`
+  - `roborev.service`
   - `sync-gtk-theme-to-gnome.service`
   - `xremap.service`
   These are enabled idempotently on every `chezmoi apply`.
