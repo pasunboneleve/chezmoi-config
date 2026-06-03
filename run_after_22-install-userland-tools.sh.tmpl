@@ -65,11 +65,11 @@ install_bun_tool() {
 }
 
 install_claude_cli() {
-  if command -v claude >/dev/null 2>&1 || command -v claude-cli >/dev/null 2>&1; then
+  if command -v claude >/dev/null 2>&1; then
     return
   fi
 
-  bun add -g @anthropic-ai/claude-code
+  curl -fsSL https://claude.ai/install.sh | bash
 }
 
 latest_github_tag() {
