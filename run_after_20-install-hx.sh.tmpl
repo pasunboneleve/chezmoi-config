@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export PATH="$HOME/.local/bin:$PATH"
+
+if command -v hx >/dev/null 2>&1; then
+  echo "hx is already installed."
+  exit 0
+fi
+
+curl -fsSL https://arcanist.sh/hx/install.sh | sh
