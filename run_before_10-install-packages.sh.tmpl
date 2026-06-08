@@ -230,6 +230,15 @@ enable_tailscale_service() {
   fi
 }
 
+install_bitwarden_desktop_rpm() {
+  if command -v bitwarden >/dev/null 2>&1; then
+    return
+  fi
+
+  run_with_colored_errors sudo dnf install -y \
+    'https://vault.bitwarden.com/download/?app=desktop&platform=linux&variant=rpm'
+}
+
 if command -v dnf >/dev/null 2>&1; then
   sudo dnf -y copr enable blakegardner/xremap
   ensure_tailscale_dnf_repo
@@ -254,6 +263,7 @@ if command -v dnf >/dev/null 2>&1; then
     zsh-autosuggestions \
     zsh-syntax-highlighting
 
+  install_bitwarden_desktop_rpm
   enable_tailscale_service
   configure_xremap_permissions
 fi
