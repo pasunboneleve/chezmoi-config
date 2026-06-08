@@ -240,6 +240,7 @@ install_bitwarden_desktop_rpm() {
 }
 
 if command -v dnf >/dev/null 2>&1; then
+  sudo dnf -y copr enable scottames/ghostty
   sudo dnf -y copr enable blakegardner/xremap
   ensure_tailscale_dnf_repo
 
