@@ -444,6 +444,8 @@ if ! command -v bun >/dev/null 2>&1; then
   install_from_script bun https://bun.com/install
 fi
 
+install_bun_tool opencode opencode-ai
+
 if ! command -v uv >/dev/null 2>&1; then
   install_from_script uv https://astral.sh/uv/install.sh
 fi
@@ -468,6 +470,7 @@ install_rumdl
 ensure_rust_toolchain
 
 install_cargo_tool emacs-lsp-booster emacs-lsp-booster
+install_cargo_tool zellij zellij
 
 if ! command -v pyright-langserver >/dev/null 2>&1; then
   uv tool install pyright

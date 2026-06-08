@@ -212,8 +212,27 @@ configure_xremap_permissions() {
   sudo udevadm trigger
 }
 
+ensure_tailscale_dnf_repo() {
+  local repo_url="https://pkgs.tailscale.com/stable/fedora/tailscale.repo"
+
+  run_with_colored_errors sudo dnf install -y 'dnf-command(config-manager)'
+
+  if LANG=C.UTF-8 dnf --version | grep -q '^dnf5 version'; then
+    run_with_colored_errors sudo dnf config-manager addrepo --overwrite --from-repofile="$repo_url"
+  else
+    run_with_colored_errors sudo dnf config-manager --add-repo "$repo_url"
+  fi
+}
+
+enable_tailscale_service() {
+  if command -v systemctl >/dev/null 2>&1; then
+    run_with_colored_errors sudo systemctl enable --now tailscaled
+  fi
+}
+
 if command -v dnf >/dev/null 2>&1; then
   sudo dnf -y copr enable blakegardner/xremap
+  ensure_tailscale_dnf_repo
 
   run_with_colored_errors sudo dnf install -y \
     chezmoi \
@@ -226,14 +245,17 @@ if command -v dnf >/dev/null 2>&1; then
     ghostty \
     levien-inconsolata-fonts \
     openssl-devel \
+    perl-FindBin \
     pkgconf-pkg-config \
     ripgrep \
+    tailscale \
     unzip \
     xremap-gnome \
     zsh \
     zsh-autosuggestions \
     zsh-syntax-highlighting
 
+  enable_tailscale_service
   configure_xremap_permissions
 fi
 
