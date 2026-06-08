@@ -18,3 +18,5 @@ tmp/
 
 # chezmoi local state should not live in the source repo
 .chezmoistate*
+.kata.toml
+.kata.local.toml
