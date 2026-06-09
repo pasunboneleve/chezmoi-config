@@ -299,6 +299,23 @@ install_rush() {
   esac
 }
 
+install_mdserve() {
+  case "$(uname -s):$(uname -m)" in
+    Linux:x86_64)
+      install_github_binary_asset mdserve jfernandez/mdserve mdserve-x86_64-unknown-linux-gnu
+      ;;
+    Darwin:arm64|Darwin:aarch64)
+      install_github_binary_asset mdserve jfernandez/mdserve mdserve-aarch64-apple-darwin
+      ;;
+    Darwin:x86_64)
+      install_github_binary_asset mdserve jfernandez/mdserve mdserve-x86_64-apple-darwin
+      ;;
+    *)
+      echo "Skipping mdserve: unsupported platform $(uname -s):$(uname -m)."
+      ;;
+  esac
+}
+
 install_rumdl() {
   local tag
   local url
@@ -495,6 +512,7 @@ install_skilpel
 install_rush
 install_devloop
 install_dress_rehearsal
+install_mdserve
 install_typst
 install_tinymist
 install_rumdl
