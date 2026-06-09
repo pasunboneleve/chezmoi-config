@@ -125,7 +125,53 @@ sync_repo() {
   checkout_main_and_pull "${repo_name}" "${full_name}"
 }
 
+print_sync_jobs() {
+  local full_name
+
+  while IFS= read -r full_name || [[ -n "${full_name}" ]]; do
+    if [[ -z "${full_name}" || "${full_name}" == \#* ]]; then
+      continue
+    fi
+
+    if [[ ! "${full_name}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+      warn "skipping malformed repository name: ${full_name}"
+      continue
+    fi
+
+    printf '%s\t%s\tgit@github.com:%s.git\n' "${full_name}" "${full_name##*/}" "${full_name}"
+  done < "${repo_list}"
+}
+
+sync_repos_sequentially() {
+  local full_name
+  local repo_name
+  local clone_url
+
+  print_sync_jobs \
+    | while IFS=$'\t' read -r full_name repo_name clone_url; do
+        sync_repo "${full_name}" "${repo_name}" "${clone_url}"
+      done
+}
+
+sync_repos_with_rush() {
+  local script_path="${BASH_SOURCE[0]}"
+
+  print_sync_jobs \
+    | SYNC_GITHUB_FAVOURITES_SCRIPT="${script_path}" \
+      rush -k -d '\t' 'bash "$SYNC_GITHUB_FAVOURITES_SCRIPT" --sync-repo {1} {2} {3}'
+}
+
 main() {
+  if [[ "${1:-}" == "--sync-repo" ]]; then
+    if [[ "$#" -ne 4 ]]; then
+      printf 'error: --sync-repo requires full-name, repo-name, and clone-url\n' >&2
+      exit 1
+    fi
+
+    sync_repo "$2" "$3" "$4"
+    return 0
+  fi
+
   require_command git
 
   if [[ ! -f "${repo_list}" ]]; then
@@ -141,18 +187,11 @@ main() {
     return 0
   fi
 
-  while IFS= read -r full_name || [[ -n "${full_name}" ]]; do
-    if [[ -z "${full_name}" || "${full_name}" == \#* ]]; then
-      continue
-    fi
-
-    if [[ ! "${full_name}" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
-      warn "skipping malformed repository name: ${full_name}"
-      continue
-    fi
-
-    sync_repo "${full_name}" "${full_name##*/}" "git@github.com:${full_name}.git"
-  done < "${repo_list}"
+  if command -v rush >/dev/null 2>&1; then
+    sync_repos_with_rush
+  else
+    sync_repos_sequentially
+  fi
 }
 
 main "$@"
