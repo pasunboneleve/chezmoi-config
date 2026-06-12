@@ -212,10 +212,20 @@ configure_xremap_permissions() {
   sudo udevadm trigger
 }
 
+ensure_dnf_config_manager() {
+  run_with_colored_errors sudo dnf install -y 'dnf-command(config-manager)'
+}
+
+ensure_google_chrome_dnf_repo() {
+  run_with_colored_errors sudo dnf install -y fedora-workstation-repositories
+  ensure_dnf_config_manager
+  run_with_colored_errors sudo dnf config-manager setopt google-chrome.enabled=1
+}
+
 ensure_tailscale_dnf_repo() {
   local repo_url="https://pkgs.tailscale.com/stable/fedora/tailscale.repo"
 
-  run_with_colored_errors sudo dnf install -y 'dnf-command(config-manager)'
+  ensure_dnf_config_manager
 
   if LANG=C.UTF-8 dnf --version | grep -q '^dnf5 version'; then
     run_with_colored_errors sudo dnf config-manager addrepo --overwrite --from-repofile="$repo_url"
@@ -243,6 +253,7 @@ if command -v dnf >/dev/null 2>&1; then
   sudo dnf -y copr enable scottames/ghostty
   sudo dnf -y copr enable blakegardner/xremap
   ensure_tailscale_dnf_repo
+  ensure_google_chrome_dnf_repo
 
   run_with_colored_errors sudo dnf install -y \
     chezmoi \
@@ -252,6 +263,7 @@ if command -v dnf >/dev/null 2>&1; then
     git \
     git-filter-repo \
     golang \
+    google-chrome-stable \
     gstreamer1-plugin-openh264 \
     ghostty \
     levien-inconsolata-fonts \
@@ -304,6 +316,7 @@ if command -v brew >/dev/null 2>&1; then
     zsh-syntax-highlighting
   brew install --cask \
     font-inconsolata \
+    google-chrome \
     ghostty \
     windows-app
 fi
