@@ -217,9 +217,15 @@ ensure_dnf_config_manager() {
 }
 
 ensure_google_chrome_dnf_repo() {
+  local signing_key_fingerprint="7721f63bd38b4796"
+  local signing_key_url="https://dl.google.com/linux/linux_signing_key.pub"
+
   run_with_colored_errors sudo dnf install -y fedora-workstation-repositories
   ensure_dnf_config_manager
   run_with_colored_errors sudo dnf config-manager setopt google-chrome.enabled=1
+  if ! rpm -qa 'gpg-pubkey*' | grep -qi "$signing_key_fingerprint"; then
+    run_with_colored_errors sudo rpm --import "$signing_key_url"
+  fi
 }
 
 ensure_tailscale_dnf_repo() {
