@@ -252,10 +252,14 @@ if command -v dnf >/dev/null 2>&1; then
     git \
     git-filter-repo \
     golang \
+    gstreamer1-plugin-openh264 \
     ghostty \
     levien-inconsolata-fonts \
+    mozilla-openh264 \
+    openh264 \
     openssl-devel \
     pkgconf-pkg-config \
+    remmina \
     restic \
     ripgrep \
     tailscale \
@@ -300,7 +304,8 @@ if command -v brew >/dev/null 2>&1; then
     zsh-syntax-highlighting
   brew install --cask \
     font-inconsolata \
-    ghostty
+    ghostty \
+    windows-app
 fi
 
 install_emacs_packages
