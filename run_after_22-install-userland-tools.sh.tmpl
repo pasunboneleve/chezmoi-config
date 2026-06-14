@@ -382,6 +382,43 @@ install_tinymist() {
   esac
 }
 
+install_codex_acp() {
+  local tag
+  local version
+  local asset
+
+  if command -v codex-acp >/dev/null 2>&1; then
+    return
+  fi
+
+  tag="$(latest_github_tag zed-industries/codex-acp)"
+  version="${tag#v}"
+
+  case "$(uname -s):$(uname -m)" in
+    Linux:x86_64)
+      asset="codex-acp-${version}-x86_64-unknown-linux-gnu.tar.gz"
+      ;;
+    Linux:aarch64|Linux:arm64)
+      asset="codex-acp-${version}-aarch64-unknown-linux-gnu.tar.gz"
+      ;;
+    Darwin:arm64|Darwin:aarch64)
+      asset="codex-acp-${version}-aarch64-apple-darwin.tar.gz"
+      ;;
+    Darwin:x86_64)
+      asset="codex-acp-${version}-x86_64-apple-darwin.tar.gz"
+      ;;
+    *)
+      echo "Skipping codex-acp: unsupported platform $(uname -s):$(uname -m)."
+      return
+      ;;
+  esac
+
+  install_github_archive_binary_asset \
+    codex-acp \
+    zed-industries/codex-acp \
+    "$asset"
+}
+
 install_icon_fonts() {
   {{ if eq .chezmoi.os "darwin" -}}
   local all_the_icons_dir="$HOME/Library/Fonts/all-the-icons"
@@ -494,6 +531,7 @@ if ! command -v bun >/dev/null 2>&1; then
 fi
 
 install_bun_tool opencode opencode-ai
+install_bun_tool claude-agent-acp @agentclientprotocol/claude-agent-acp
 install_bun_tool bw @bitwarden/cli
 
 if ! command -v uv >/dev/null 2>&1; then
@@ -530,6 +568,8 @@ fi
 if ! command -v codex >/dev/null 2>&1; then
   install-codex-latest
 fi
+
+install_codex_acp
 
 if ! command -v agy >/dev/null 2>&1; then
   curl -fsSL https://antigravity.google/cli/install.sh | bash
