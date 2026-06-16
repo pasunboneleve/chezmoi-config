@@ -58,11 +58,13 @@ packaged zsh plugins directly.
 - `~/.zshrc` and `~/.zshenv`, symlinked into `~/.config/dotfiles`
 - default login shell set to `zsh`
 - `~/.gitconfig`
+- `~/.codex/config.toml`, with required Codex defaults and MCP server entries preserved without duplication
 - `~/.config/ghostty/config`, symlinked into `~/.config/dotfiles`
 - `~/.config/starship.toml`, symlinked into `~/.config/dotfiles`
 - `~/.ghci`, symlinked into `~/.config/dotfiles`
 - `~/.config/direnv/direnvrc`, symlinked into `~/.config/dotfiles`
 - `~/.config/emacs` from `github.com/pasunboneleve/emacs.d`
+- `~/.roborev/config.toml`, with `server_addr` enforced as `unix://`
 - Linux-only `~/.config/xremap/xremap.yml`, symlinked into `~/.config/dotfiles`
 - Linux-only user services:
   - `emacs.service`

@@ -246,6 +246,12 @@ enable_tailscale_service() {
   fi
 }
 
+enable_docker_service() {
+  if command -v systemctl >/dev/null 2>&1; then
+    run_with_colored_errors sudo systemctl enable --now docker
+  fi
+}
+
 install_bitwarden_desktop_rpm() {
   if command -v bitwarden >/dev/null 2>&1; then
     return
@@ -264,6 +270,8 @@ if command -v dnf >/dev/null 2>&1; then
   run_with_colored_errors sudo dnf install -y \
     chezmoi \
     direnv \
+    docker-cli \
+    docker-compose \
     emacs \
     gh \
     git \
@@ -274,6 +282,7 @@ if command -v dnf >/dev/null 2>&1; then
     ghostty \
     levien-inconsolata-fonts \
     mozilla-openh264 \
+    moby-engine \
     openh264 \
     openssl-devel \
     pkgconf-pkg-config \
@@ -289,6 +298,7 @@ if command -v dnf >/dev/null 2>&1; then
     zsh-syntax-highlighting
 
   install_bitwarden_desktop_rpm
+  enable_docker_service
   enable_tailscale_service
   configure_xremap_permissions
 fi
@@ -304,6 +314,8 @@ if command -v brew >/dev/null 2>&1; then
     chezmoi \
     coreutils \
     direnv \
+    docker \
+    docker-compose \
     emacs \
     gh \
     git \
