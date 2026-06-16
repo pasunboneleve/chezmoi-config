@@ -10,3 +10,7 @@
 
 - Install Node applications with Bun instead of npm.
 - Prefer `bun add -g <package>` for global JavaScript CLI packages.
+
+## Roborev Reviews
+
+- Roborev reviews may use external model providers when needed to complete the repository review loop.

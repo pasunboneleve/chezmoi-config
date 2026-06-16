@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly ROBOREV_DIR="${HOME}/.roborev"
+readonly ROBOREV_CONFIG_PATH="${ROBOREV_DIR}/config.toml"
+readonly CODEX_DIR="${HOME}/.codex"
+readonly CODEX_CONFIG_PATH="${CODEX_DIR}/config.toml"
+
+ensure_roborev_config() {
+  local tmpdir
+  local source_path
+  local output_path
+
+  install -d "$ROBOREV_DIR"
+  chmod 0700 "$ROBOREV_DIR"
+
+  tmpdir="$(mktemp -d "$ROBOREV_DIR/.tmp.XXXXXX")"
+  trap 'rm -rf "$tmpdir"' RETURN
+
+  source_path="$tmpdir/roborev-source.toml"
+  output_path="$tmpdir/roborev-output.toml"
+
+  if [ -f "$ROBOREV_CONFIG_PATH" ]; then
+    cp "$ROBOREV_CONFIG_PATH" "$source_path"
+  else
+    : > "$source_path"
+  fi
+
+  awk '
+    BEGIN {
+      inserted = 0
+      in_section = 0
+    }
+
+    /^[[:space:]]*\[/ && !in_section {
+      if (!inserted) {
+        print "server_addr = '\''unix://'\''"
+        inserted = 1
+      }
+      in_section = 1
+    }
+
+    !in_section && /^[[:space:]]*server_addr[[:space:]]*=/ {
+      if (!inserted) {
+        print "server_addr = '\''unix://'\''"
+        inserted = 1
+      }
+      next
+    }
+
+    {
+      print
+    }
+
+    END {
+      if (!inserted) {
+        if (NR > 0) {
+          print ""
+        }
+        print "server_addr = '\''unix://'\''"
+      }
+    }
+  ' "$source_path" > "$output_path"
+
+  mv "$output_path" "$ROBOREV_CONFIG_PATH"
+}
+
+ensure_codex_config() {
+  local tmpdir
+  local source_path
+  local output_path
+
+  install -d "$CODEX_DIR"
+  chmod 0700 "$CODEX_DIR"
+
+  tmpdir="$(mktemp -d "$CODEX_DIR/.tmp.XXXXXX")"
+  trap 'rm -rf "$tmpdir"' RETURN
+
+  source_path="$tmpdir/codex-source.toml"
+  output_path="$tmpdir/codex-output.toml"
+
+  if [ -f "$CODEX_CONFIG_PATH" ]; then
+    cp "$CODEX_CONFIG_PATH" "$source_path"
+  else
+    : > "$source_path"
+  fi
+
+  awk '
+    function print_managed_block() {
+      print "model_reasoning_effort = \"medium\""
+      print "approvals_reviewer = \"auto_review\""
+      print "model = \"gpt-5.4\""
+      print "approval_policy = \"on-request\""
+      print ""
+      print "[mcp_servers.github]"
+      print "url = \"https://api.githubcopilot.com/mcp/\""
+      print "bearer_token_env_var = \"GITHUB_API_TOKEN\""
+      print ""
+      print "[mcp_servers.mcp-atlassian]"
+      print "command = \"uvx\""
+      print "args = [\"mcp-atlassian\"]"
+      print "env_vars = ["
+      print "  \"JIRA_URL\","
+      print "  \"JIRA_USERNAME\","
+      print "  \"JIRA_API_TOKEN\","
+      print "  \"CONFLUENCE_URL\","
+      print "  \"CONFLUENCE_USERNAME\","
+      print "  \"CONFLUENCE_API_TOKEN\","
+      print "]"
+    }
+
+    function trim(value) {
+      sub(/[[:space:]]+#.*$/, "", value)
+      sub(/^[[:space:]]+/, "", value)
+      sub(/[[:space:]]+$/, "", value)
+      return value
+    }
+
+    BEGIN {
+      inserted = 0
+      in_section = 0
+      skip_section = 0
+    }
+
+    /^[[:space:]]*\[/ {
+      header = trim($0)
+
+      if (!in_section) {
+        if (!inserted) {
+          print_managed_block()
+          print ""
+          inserted = 1
+        }
+        in_section = 1
+      }
+
+      skip_section = 0
+      if (header == "[mcp_servers.github]" || header == "[[mcp_servers.github]]" || header == "[mcp_servers.mcp-atlassian]" || header == "[[mcp_servers.mcp-atlassian]]") {
+        skip_section = 1
+      }
+    }
+
+    !in_section && (/^[[:space:]]*model_reasoning_effort[[:space:]]*=/ || /^[[:space:]]*approvals_reviewer[[:space:]]*=/ || /^[[:space:]]*model[[:space:]]*=/ || /^[[:space:]]*approval_policy[[:space:]]*=/) {
+      next
+    }
+
+    skip_section {
+      next
+    }
+
+    {
+      print
+    }
+
+    END {
+      if (!inserted) {
+        if (NR > 0) {
+          print ""
+        }
+        print_managed_block()
+      }
+    }
+  ' "$source_path" > "$output_path"
+
+  mv "$output_path" "$CODEX_CONFIG_PATH"
+}
+
+ensure_roborev_config
+ensure_codex_config
