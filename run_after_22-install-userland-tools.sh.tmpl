@@ -268,6 +268,43 @@ install_dress_rehearsal() {
   esac
 }
 
+install_jira() {
+  local tag
+  local version
+  local url
+
+  if command -v jira >/dev/null 2>&1; then
+    return
+  fi
+
+  tag="$(latest_github_tag ankitpokhrel/jira-cli)"
+  version="${tag#v}"
+
+  case "$(uname -s):$(uname -m)" in
+    Linux:x86_64)
+      url="$(github_tag_download_url ankitpokhrel/jira-cli "$tag" "jira_${version}_linux_x86_64.tar.gz")"
+      ;;
+    Linux:i386|Linux:i686)
+      url="$(github_tag_download_url ankitpokhrel/jira-cli "$tag" "jira_${version}_linux_i386.tar.gz")"
+      ;;
+    Linux:aarch64|Linux:arm64)
+      url="$(github_tag_download_url ankitpokhrel/jira-cli "$tag" "jira_${version}_linux_arm64.tar.gz")"
+      ;;
+    Darwin:arm64|Darwin:aarch64)
+      url="$(github_tag_download_url ankitpokhrel/jira-cli "$tag" "jira_${version}_macOS_arm64.tar.gz")"
+      ;;
+    Darwin:x86_64)
+      url="$(github_tag_download_url ankitpokhrel/jira-cli "$tag" "jira_${version}_macOS_x86_64.tar.gz")"
+      ;;
+    *)
+      echo "Skipping jira: unsupported platform $(uname -s):$(uname -m)."
+      return
+      ;;
+  esac
+
+  install_github_archive_binary_url jira "$url"
+}
+
 install_skilpel() {
   case "$(uname -s):$(uname -m)" in
     Linux:x86_64)
@@ -547,6 +584,7 @@ if ! command -v bd >/dev/null 2>&1; then
 fi
 
 install_go_tool kata go.kenn.io/kata/cmd/kata@latest
+install_jira
 install_skilpel
 install_rush
 install_devloop
