@@ -320,7 +320,9 @@ if command -v brew >/dev/null 2>&1; then
   if brew list --formula emacs &>/dev/null 2>&1; then
     brew uninstall --ignore-dependencies emacs
   fi
-  brew install \
+  # { yes || true; } answers any formula y/n prompts (e.g. new Python version);
+  # the || true prevents a SIGPIPE from yes breaking set -o pipefail.
+  { yes || true; } | brew install \
     python-argcomplete \
     awscli \
     chezmoi \
