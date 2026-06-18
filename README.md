@@ -52,6 +52,11 @@ and `zsh-z` into `~/.local/share/zsh/plugins` because those are not available
 from the enabled Fedora repos on this machine. On macOS, Homebrew installs the
 packaged zsh plugins directly.
 
+The Codex CLI is installed from a Sigstore-verified GitHub release on Linux
+(`install-codex-latest`). Codex publishes Sigstore bundles only for its Linux
+musl targets, so on macOS Codex is installed from the `codex` Homebrew cask
+instead, and `install-codex-latest` is not run.
+
 ## Managed Highlights
 
 - `~/.config/dotfiles` from `github.com/pasunboneleve/dotfiles`
@@ -74,6 +79,10 @@ packaged zsh plugins directly.
   - `xremap.service`
   These are enabled idempotently on every `chezmoi apply`.
 - Linux-only Emacs client desktop entry
+- macOS-only `~/.config/karabiner/karabiner.json`, reproducing the Moonlander
+  home-row mods (hold `a`/`;` = Command, `s`/`l` = Shift, `d`/`k` = Option,
+  `f`/`j` = Control). Spotlight is reached the same way as on the Moonlander:
+  hold `a` briefly, then press Space. Requires the `karabiner-elements` cask.
 
 ## Notes
 

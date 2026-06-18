@@ -2,6 +2,14 @@
 
 set -euo pipefail
 
+# Codex publishes Sigstore bundles only for its Linux musl targets, so the
+# verified-download flow below cannot be reproduced on macOS. On darwin, codex
+# is installed from the Homebrew cask instead (see run_before_10-install-packages).
+if [[ "$(uname -s)" != "Linux" ]]; then
+  printf 'install-codex-latest supports Linux only; on macOS run: brew install --cask codex\n' >&2
+  exit 1
+fi
+
 readonly CODEX_REPO_API_URL="https://api.github.com/repos/openai/codex/releases/latest"
 readonly CODEX_TARGET_TRIPLE="x86_64-unknown-linux-musl"
 readonly CODEX_ARCHIVE_NAME="codex-${CODEX_TARGET_TRIPLE}.tar.gz"

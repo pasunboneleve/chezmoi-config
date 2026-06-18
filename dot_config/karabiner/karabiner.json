@@ -1,0 +1,75 @@
+{
+  "global": {
+    "show_in_menu_bar": false
+  },
+  "profiles": [
+    {
+      "name": "moonlander home-row",
+      "selected": true,
+      "virtual_hid_keyboard": {
+        "keyboard_type_v2": "ansi"
+      },
+      "complex_modifications": {
+        "parameters": {
+          "basic.to_if_alone_timeout_milliseconds": 150,
+          "basic.to_if_held_down_threshold_milliseconds": 150
+        },
+        "rules": [
+          {
+            "description": "Home-row mods (Moonlander layer 0): hold a/;=Cmd, s/l=Shift, d/k=Alt, f/j=Ctrl. Spotlight = hold a + Space.",
+            "manipulators": [
+              {
+                "type": "basic",
+                "from": { "key_code": "a", "modifiers": { "optional": ["any"] } },
+                "to_if_held_down": [{ "key_code": "left_command" }],
+                "to_if_alone": [{ "key_code": "a" }]
+              },
+              {
+                "type": "basic",
+                "from": { "key_code": "s", "modifiers": { "optional": ["any"] } },
+                "to_if_held_down": [{ "key_code": "left_shift" }],
+                "to_if_alone": [{ "key_code": "s" }]
+              },
+              {
+                "type": "basic",
+                "from": { "key_code": "d", "modifiers": { "optional": ["any"] } },
+                "to_if_held_down": [{ "key_code": "left_option" }],
+                "to_if_alone": [{ "key_code": "d" }]
+              },
+              {
+                "type": "basic",
+                "from": { "key_code": "f", "modifiers": { "optional": ["any"] } },
+                "to_if_held_down": [{ "key_code": "left_control" }],
+                "to_if_alone": [{ "key_code": "f" }]
+              },
+              {
+                "type": "basic",
+                "from": { "key_code": "j", "modifiers": { "optional": ["any"] } },
+                "to_if_held_down": [{ "key_code": "right_control" }],
+                "to_if_alone": [{ "key_code": "j" }]
+              },
+              {
+                "type": "basic",
+                "from": { "key_code": "k", "modifiers": { "optional": ["any"] } },
+                "to_if_held_down": [{ "key_code": "right_option" }],
+                "to_if_alone": [{ "key_code": "k" }]
+              },
+              {
+                "type": "basic",
+                "from": { "key_code": "l", "modifiers": { "optional": ["any"] } },
+                "to_if_held_down": [{ "key_code": "right_shift" }],
+                "to_if_alone": [{ "key_code": "l" }]
+              },
+              {
+                "type": "basic",
+                "from": { "key_code": "semicolon", "modifiers": { "optional": ["any"] } },
+                "to_if_held_down": [{ "key_code": "right_command" }],
+                "to_if_alone": [{ "key_code": "semicolon" }]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

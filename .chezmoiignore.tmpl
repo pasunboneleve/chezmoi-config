@@ -2,9 +2,11 @@ README.md
 
 {{ if ne .chezmoi.os "linux" }}
 dot_config/xremap/
-dot_config/systemd/user/emacs.service
-dot_config/systemd/user/xremap.service
-dot_config/systemd/user/sync-gtk-theme-to-gnome.service
+dot_config/systemd/
 dot_local/bin/executable_sync-gtk-theme-to-gnome
 dot_local/share/applications/emacs-client.desktop.tmpl
+{{ end }}
+
+{{ if ne .chezmoi.os "darwin" }}
+dot_config/karabiner/
 {{ end }}

@@ -603,9 +603,13 @@ if ! command -v pyright-langserver >/dev/null 2>&1; then
   uv tool install pyright
 fi
 
+{{ if eq .chezmoi.os "linux" -}}
 if ! command -v codex >/dev/null 2>&1; then
   install-codex-latest
 fi
+{{ else -}}
+# On macOS codex comes from the Homebrew cask (run_before_10-install-packages).
+{{ end -}}
 
 install_codex_acp
 
