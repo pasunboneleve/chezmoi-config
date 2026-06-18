@@ -315,6 +315,7 @@ fi
 install_emacs_packages
 {{ else if eq .chezmoi.os "darwin" -}}
 if command -v brew >/dev/null 2>&1; then
+  export HOMEBREW_NO_INTERACTIVE=1
   # emacs-plus provides NS/Cocoa support required for GUI daemon+client workflow
   if brew list --formula emacs &>/dev/null 2>&1; then
     brew uninstall --ignore-dependencies emacs
