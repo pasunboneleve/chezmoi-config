@@ -21,10 +21,10 @@
               {
                 "type": "basic",
                 "from": { "key_code": "left_command", "modifiers": { "optional": ["any"] } },
-                "to_if_alone": [{ "key_code": "left_command" }],
-                "to_if_held_down": [{ "key_code": "up_arrow", "modifiers": ["left_control"] }],
+                "to": [{ "key_code": "left_command" }],
+                "to_if_held_down": [{ "apple_vendor_keyboard_key_code": "mission_control" }],
                 "parameters": {
-                  "basic.to_if_held_down_threshold_milliseconds": 500
+                  "basic.to_if_held_down_threshold_milliseconds": 300
                 }
               }
             ]
