@@ -197,6 +197,10 @@ install_emacs_packages() {
   echo "Emacs batch setup completed."
 }
 
+# Use half the logical CPU cores for Elpaca parallelism on any platform.
+# nproc is Linux/GNU; sysctl is macOS; falls back to 2 workers minimum.
+: "${CHEZMOI_ELPACA_QUEUE_LIMIT:=$(( $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) / 2 ))}"
+
 {{ if eq .chezmoi.os "linux" -}}
 configure_xremap_permissions() {
   if ! getent group input >/dev/null 2>&1; then
@@ -358,8 +362,5 @@ if command -v brew >/dev/null 2>&1; then
     windows-app
 fi
 
-# Default to one Elpaca worker per CPU core on macOS; Linux keeps the
-# conservative default of 1 to avoid issues on lower-spec machines.
-: "${CHEZMOI_ELPACA_QUEUE_LIMIT:=$(( $(sysctl -n hw.ncpu) / 2 ))}"
 install_emacs_packages
 {{ end -}}
