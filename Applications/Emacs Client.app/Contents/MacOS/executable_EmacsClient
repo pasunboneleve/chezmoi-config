@@ -4,7 +4,9 @@ for emacsclient in \
     /usr/local/bin/emacsclient \
     "$HOME/.local/bin/emacsclient"; do
   if [[ -x "$emacsclient" ]]; then
-    exec "$emacsclient" -c -n --alternate-editor "" "$@"
+    "$emacsclient" -c -n --alternate-editor "" "$@"
+    osascript -e 'tell application "Emacs" to activate'
+    exit 0
   fi
 done
 echo "emacsclient not found" >&2
