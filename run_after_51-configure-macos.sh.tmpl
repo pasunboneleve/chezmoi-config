@@ -8,6 +8,11 @@ configure_rectangle() {
     return
   fi
 
+  if pgrep -x Rectangle >/dev/null 2>&1; then
+    echo "Rectangle is running, skipping configuration to avoid disrupting live settings."
+    return
+  fi
+
   # Match GNOME's Super+Arrow shortcuts (Super → Cmd via home-row 'a'=Cmd):
   #   Cmd+Left/Right  → tile left/right half
   #   Cmd+Up/Down     → maximize/restore
