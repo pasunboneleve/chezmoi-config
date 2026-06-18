@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{{ if eq .chezmoi.os "darwin" -}}
+configure_rectangle() {
+  if ! [ -d "/Applications/Rectangle.app" ]; then
+    echo "Rectangle is not installed, skipping configuration."
+    return
+  fi
+
+  # Match GNOME's Super+Arrow shortcuts (Super → Cmd via home-row 'a'=Cmd):
+  #   Cmd+Left/Right  → tile left/right half
+  #   Cmd+Up/Down     → maximize/restore
+  #   Cmd+Shift+Left/Right → move to previous/next display
+  #
+  # modifierFlags: Cmd=1048576, Shift=131072, Cmd+Shift=1179648
+  # keyCodes: Left=123, Right=124, Down=125, Up=126
+  defaults write com.knollsoft.Rectangle leftHalf        -string '{"keyCode":123,"modifierFlags":1048576}'
+  defaults write com.knollsoft.Rectangle rightHalf       -string '{"keyCode":124,"modifierFlags":1048576}'
+  defaults write com.knollsoft.Rectangle maximize        -string '{"keyCode":126,"modifierFlags":1048576}'
+  defaults write com.knollsoft.Rectangle restore         -string '{"keyCode":125,"modifierFlags":1048576}'
+  defaults write com.knollsoft.Rectangle previousDisplay -string '{"keyCode":123,"modifierFlags":1179648}'
+  defaults write com.knollsoft.Rectangle nextDisplay     -string '{"keyCode":124,"modifierFlags":1179648}'
+  defaults write com.knollsoft.Rectangle launchOnLogin   -bool true
+
+  open -ga Rectangle
+  echo "Rectangle configured and launched."
+}
+
+enable_launchagent() {
+  local label="$1"
+  local required_command="${2:-}"
+  local plist="$HOME/Library/LaunchAgents/${label}.plist"
+
+  if [[ -n "$required_command" ]] && ! command -v "$required_command" >/dev/null 2>&1; then
+    echo "Skipping $label: $required_command is not installed."
+    return
+  fi
+
+  if ! [ -f "$plist" ]; then
+    echo "Skipping $label: plist not found."
+    return
+  fi
+
+  launchctl bootout "gui/$UID/$label" 2>/dev/null || true
+  launchctl bootstrap "gui/$UID" "$plist"
+  echo "Loaded LaunchAgent: $label"
+}
+
+configure_rectangle
+enable_launchagent gnu.emacs.daemon emacs
+enable_launchagent go.kenn.kata.daemon kata
+enable_launchagent io.roborev.daemon roborev
+{{ end -}}
