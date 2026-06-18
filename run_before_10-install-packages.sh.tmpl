@@ -360,6 +360,6 @@ fi
 
 # Default to one Elpaca worker per CPU core on macOS; Linux keeps the
 # conservative default of 1 to avoid issues on lower-spec machines.
-: "${CHEZMOI_ELPACA_QUEUE_LIMIT:=$(sysctl -n hw.ncpu)}"
+: "${CHEZMOI_ELPACA_QUEUE_LIMIT:=$(( $(sysctl -n hw.ncpu) / 2 ))}"
 install_emacs_packages
 {{ end -}}
