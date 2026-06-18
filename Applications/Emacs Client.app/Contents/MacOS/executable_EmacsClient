@@ -5,6 +5,7 @@ for emacsclient in \
     "$HOME/.local/bin/emacsclient"; do
   if [[ -x "$emacsclient" ]]; then
     "$emacsclient" -c -n --alternate-editor "" "$@"
+    sleep 0.3
     osascript -e 'tell application "Emacs" to activate'
     exit 0
   fi
