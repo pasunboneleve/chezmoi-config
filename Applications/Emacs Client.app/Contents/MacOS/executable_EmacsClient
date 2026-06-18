@@ -1,2 +1,11 @@
 #!/bin/zsh
-exec emacsclient -c -n --alternate-editor "" "$@"
+for emacsclient in \
+    /opt/homebrew/bin/emacsclient \
+    /usr/local/bin/emacsclient \
+    "$HOME/.local/bin/emacsclient"; do
+  if [[ -x "$emacsclient" ]]; then
+    exec "$emacsclient" -c -n --alternate-editor "" "$@"
+  fi
+done
+echo "emacsclient not found" >&2
+exit 1

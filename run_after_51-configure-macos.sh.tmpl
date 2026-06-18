@@ -47,7 +47,30 @@ enable_launchagent() {
   echo "Loaded LaunchAgent: $label"
 }
 
+link_emacs_app() {
+  local emacs_app=""
+  local prefix
+
+  for prefix in \
+    "$(brew --prefix emacs-plus@30 2>/dev/null)" \
+    "$(brew --prefix emacs 2>/dev/null)"; do
+    if [[ -d "$prefix/Emacs.app" ]]; then
+      emacs_app="$prefix/Emacs.app"
+      break
+    fi
+  done
+
+  if [[ -z "$emacs_app" ]]; then
+    echo "Emacs.app not found under any known Homebrew prefix, skipping."
+    return
+  fi
+
+  ln -sfn "$emacs_app" "$HOME/Applications/Emacs.app"
+  echo "Linked $emacs_app → ~/Applications/Emacs.app"
+}
+
 configure_rectangle
+link_emacs_app
 enable_launchagent gnu.emacs.daemon emacs
 enable_launchagent go.kenn.kata.daemon kata
 enable_launchagent io.roborev.daemon roborev

@@ -8,7 +8,7 @@
     <array>
         <string>/bin/zsh</string>
         <string>-lc</string>
-        <string>exec emacs --fg-daemon</string>
+        <string>exec "$HOME/Applications/Emacs.app/Contents/MacOS/Emacs" --fg-daemon</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
