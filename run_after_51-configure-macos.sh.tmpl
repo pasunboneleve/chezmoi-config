@@ -84,9 +84,16 @@ remove_stale_emacs_user_dir() {
   fi
 }
 
+register_apps() {
+  local lsregister="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+  "$lsregister" -f "$HOME/Applications/Emacs Client.app"
+  "$lsregister" -f "$HOME/Applications/Emacs GUI.app"
+}
+
 configure_rectangle
 link_emacs_app
 remove_stale_emacs_user_dir
+register_apps
 enable_launchagent gnu.emacs.daemon emacs
 enable_launchagent go.kenn.kata.daemon kata
 enable_launchagent io.roborev.daemon roborev
