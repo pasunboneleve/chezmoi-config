@@ -166,6 +166,10 @@ install_emacs_packages() {
   fi
 
   emacs_args=(--batch)
+  # Override user-emacs-directory: Emacs defaults to ~/.emacs.d when it exists,
+  # even if ~/.config/emacs also exists. Set it explicitly so batch runs use the
+  # correct directory regardless of ~/.emacs.d presence.
+  emacs_args+=(--eval "(setq user-emacs-directory (expand-file-name \"~/.config/emacs/\"))")
   emacs_args+=(--eval "(setq elpaca-queue-limit $elpaca_queue_limit)")
 
   if [ -f "$config_dir/early-init.el" ]; then

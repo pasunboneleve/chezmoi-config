@@ -74,8 +74,19 @@ link_emacs_app() {
   echo "Linked $emacs_app → ~/Applications/Emacs.app"
 }
 
+remove_stale_emacs_user_dir() {
+  # Emacs uses ~/.config/emacs as user-emacs-directory only when ~/.emacs.d is absent.
+  # Remove the stale ~/.emacs.d if the real config is already in ~/.config/emacs.
+  # Generated content (elpaca, eln-cache) is recreated on next Emacs startup.
+  if [ -d "$HOME/.emacs.d" ] && [ -d "$HOME/.config/emacs/.git" ]; then
+    echo "Removing stale ~/.emacs.d so Emacs uses ~/.config/emacs as user-emacs-directory."
+    rm -rf "$HOME/.emacs.d"
+  fi
+}
+
 configure_rectangle
 link_emacs_app
+remove_stale_emacs_user_dir
 enable_launchagent gnu.emacs.daemon emacs
 enable_launchagent go.kenn.kata.daemon kata
 enable_launchagent io.roborev.daemon roborev
