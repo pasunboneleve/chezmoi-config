@@ -36,7 +36,7 @@ colorize_errors() {
 
 run_with_colored_errors() {
   set +e
-  "$@" 2>&1 | colorize_errors
+  "$@" </dev/null 2>&1 | colorize_errors
   local status="${PIPESTATUS[0]}"
   set -e
   return "$status"
