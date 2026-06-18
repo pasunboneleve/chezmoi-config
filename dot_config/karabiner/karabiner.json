@@ -16,6 +16,20 @@
         },
         "rules": [
           {
+            "description": "Left GUI (thumb cluster Super) held alone → Mission Control; tap or hold+key → Cmd",
+            "manipulators": [
+              {
+                "type": "basic",
+                "from": { "key_code": "left_command", "modifiers": { "optional": ["any"] } },
+                "to_if_alone": [{ "key_code": "left_command" }],
+                "to_if_held_down": [{ "key_code": "up_arrow", "modifiers": ["left_control"] }],
+                "parameters": {
+                  "basic.to_if_held_down_threshold_milliseconds": 500
+                }
+              }
+            ]
+          },
+          {
             "description": "Home-row mods (Moonlander layer 0): hold a/;=Cmd, s/l=Shift, d/k=Alt, f/j=Ctrl. Spotlight = hold a + Space.",
             "manipulators": [
               {
