@@ -570,6 +570,8 @@ fi
 install_bun_tool opencode opencode-ai
 install_bun_tool claude-agent-acp @agentclientprotocol/claude-agent-acp
 install_bun_tool bw @bitwarden/cli
+install_bun_tool tsc typescript
+install_bun_tool typescript-language-server typescript-language-server
 
 if ! command -v uv >/dev/null 2>&1; then
   install_from_script uv https://astral.sh/uv/install.sh
