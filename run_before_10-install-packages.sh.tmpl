@@ -170,9 +170,6 @@ install_emacs_packages() {
   # even if ~/.config/emacs also exists. Set it explicitly so batch runs use the
   # correct directory regardless of ~/.emacs.d presence.
   emacs_args+=(--eval "(setq user-emacs-directory (expand-file-name \"~/.config/emacs/\"))")
-  # Prevent EPA from popping up a buffer on GPG failure (no key available);
-  # in non-interactive/daemon contexts this blocks indefinitely.
-  emacs_args+=(--eval "(setq epa-popup-info-window nil)")
   emacs_args+=(--eval "(setq elpaca-queue-limit $elpaca_queue_limit)")
 
   if [ -f "$config_dir/early-init.el" ]; then
