@@ -84,6 +84,18 @@ remove_stale_emacs_user_dir() {
   fi
 }
 
+copy_emacs_icon() {
+  local icon="$HOME/Applications/Emacs.app/Contents/Resources/Emacs.icns"
+  if [[ ! -f "$icon" ]]; then
+    echo "Emacs.icns not found at $icon, skipping."
+    return
+  fi
+  for app in "Emacs Client.app" "Emacs GUI.app"; do
+    mkdir -p "$HOME/Applications/$app/Contents/Resources"
+    cp "$icon" "$HOME/Applications/$app/Contents/Resources/Emacs.icns"
+  done
+}
+
 register_apps() {
   local lsregister="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
   "$lsregister" -f "$HOME/Applications/Emacs Client.app"
@@ -93,6 +105,7 @@ register_apps() {
 configure_rectangle
 link_emacs_app
 remove_stale_emacs_user_dir
+copy_emacs_icon
 register_apps
 enable_launchagent gnu.emacs.daemon emacs
 enable_launchagent go.kenn.kata.daemon kata
