@@ -1,3 +1,6 @@
 #!/bin/zsh
 exec "$HOME/Applications/Emacs.app/Contents/MacOS/Emacs" \
-    --init-directory "$HOME/.config/emacs" "$@"
+    --init-directory "$HOME/.config/emacs" \
+    --no-init-file \
+    --eval "(progn (setq epa-popup-info-window nil) (setq user-init-file (expand-file-name \"init.el\" user-emacs-directory)) (load user-init-file))" \
+    "$@"
