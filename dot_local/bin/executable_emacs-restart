@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
-launchctl kickstart -k gui/$UID/gnu.emacs.daemon
+# Kill the daemon directly — launchd doesn't track the forked --daemon child
+pkill -x Emacs 2>/dev/null || true
+sleep 1
+# Remove stale socket
+rm -f "${TMPDIR}emacs$(id -u)/server" 2>/dev/null || true
+# Start a new instance via launchd
+launchctl kickstart "gui/$UID/gnu.emacs.daemon"
 echo "Emacs daemon restarted."
