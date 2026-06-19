@@ -8,12 +8,12 @@
     <array>
         <string>/bin/zsh</string>
         <string>-lc</string>
-        <string>exec "$HOME/Applications/Emacs.app/Contents/MacOS/Emacs" --fg-daemon --init-directory "$HOME/.config/emacs"</string>
+        <string>"$HOME/Applications/Emacs.app/Contents/MacOS/Emacs" --daemon --init-directory "$HOME/.config/emacs"</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
-    <true/>
+    <false/>
     <key>StandardOutPath</key>
     <string>/tmp/emacs-daemon.log</string>
     <key>StandardErrorPath</key>
