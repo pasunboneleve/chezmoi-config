@@ -48,8 +48,15 @@ enable_launchagent() {
   fi
 
   launchctl bootout "gui/$UID/$label" 2>/dev/null || true
-  launchctl bootstrap "gui/$UID" "$plist"
-  echo "Loaded LaunchAgent: $label"
+  sleep 1
+  if launchctl bootstrap "gui/$UID" "$plist" 2>/dev/null; then
+    echo "Loaded LaunchAgent: $label"
+  else
+    # bootstrap can fail with EIO on newer macOS if launchd hasn't fully
+    # processed the bootout; fall back to the older load command.
+    launchctl load -w "$plist"
+    echo "Loaded LaunchAgent (fallback): $label"
+  fi
 }
 
 link_emacs_app() {
