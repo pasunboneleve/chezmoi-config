@@ -327,6 +327,7 @@ if command -v brew >/dev/null 2>&1; then
   if brew list --formula emacs &>/dev/null 2>&1; then
     brew uninstall --ignore-dependencies emacs
   fi
+  brew tap zegervdv/zathura
   # { yes || true; } answers any formula y/n prompts (e.g. new Python version);
   # the || true prevents a SIGPIPE from yes breaking set -o pipefail.
   { yes || true; } | brew install \
@@ -352,7 +353,8 @@ if command -v brew >/dev/null 2>&1; then
     zsh-autocomplete \
     zsh-autosuggestions \
     zsh-completions \
-    zathura \
+    zegervdv/zathura/zathura \
+    zegervdv/zathura/zathura-pdf-poppler \
     zsh-history-substring-search \
     zsh-syntax-highlighting
   brew install --cask \
