@@ -5,9 +5,9 @@
 
 Chezmoi owns the checkout and the symlinks from standard config locations into
 that checkout. It does not own copies of the dotfiles payloads. Put changes to
-the shared shell, prompt, terminal, xremap, direnv, and GHCi files in the
-dotfiles repository, then update symlink descriptors here only when a new target
-path needs to point into that checkout.
+the shared shell, prompt, terminal, Karabiner, xremap, direnv, and GHCi files
+in the dotfiles repository, then update symlink descriptors here only when a
+new target path needs to point into that checkout.
 
 Current symlinked targets:
 
@@ -16,6 +16,7 @@ Current symlinked targets:
 - `~/.ghci` -> `~/.config/dotfiles/ghci`
 - `~/.config/starship.toml` -> `~/.config/dotfiles/starship.toml`
 - `~/.config/ghostty/config` -> `~/.config/dotfiles/ghostty`
+- `~/.config/karabiner/karabiner.json` -> `~/.config/dotfiles/karabiner.json`
 - `~/.config/direnv/direnvrc` -> `~/.config/dotfiles/direnvrc`
 - `~/.config/xremap/xremap.yml` -> `~/.config/dotfiles/xremap.yml`
 
