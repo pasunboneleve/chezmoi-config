@@ -456,6 +456,103 @@ install_codex_acp() {
     "$asset"
 }
 
+install_antigravity() {
+  local download_base_url="https://antigravity-cli-auto-updater-974169037036.us-central1.run.app"
+  local os
+  local arch
+  local platform
+  local manifest_url
+  local manifest_json
+  local url
+  local sha512
+  local staging_dir
+  local staging_payload
+  local extracted_binary
+  local is_tar_gz=false
+  local actual_hash
+
+  if command -v agy >/dev/null 2>&1; then
+    return
+  fi
+
+  case "$(uname -s)" in
+    Darwin) os="darwin" ;;
+    Linux) os="linux" ;;
+    *)
+      echo "Skipping agy: unsupported operating system $(uname -s)." >&2
+      return
+      ;;
+  esac
+
+  case "$(uname -m)" in
+    x86_64|amd64) arch="amd64" ;;
+    arm64|aarch64) arch="arm64" ;;
+    *)
+      echo "Skipping agy: unsupported architecture $(uname -m)." >&2
+      return
+      ;;
+  esac
+
+  if [ "$os" = "linux" ]; then
+    if [ -f /lib/libc.musl-x86_64.so.1 ] || [ -f /lib/libc.musl-aarch64.so.1 ] || ldd /bin/ls 2>&1 | grep -q musl; then
+      platform="linux_${arch}_musl"
+    else
+      platform="linux_${arch}"
+    fi
+  else
+    platform="${os}_${arch}"
+  fi
+
+  manifest_url="$download_base_url/manifests/$platform.json"
+  manifest_json="$(curl -fsSL "$manifest_url")"
+  url="$(printf '%s' "$manifest_json" | sed -n 's/.*"url"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+  sha512="$(printf '%s' "$manifest_json" | sed -n 's/.*"sha512"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+
+  if [ -z "$url" ] || [ -z "$sha512" ]; then
+    echo "Could not parse Antigravity manifest for $platform." >&2
+    exit 1
+  fi
+
+  staging_dir="$(mktemp -d)"
+  trap 'rm -rf "$staging_dir"' RETURN
+
+  if [[ "$url" == *.tar.gz* ]]; then
+    is_tar_gz=true
+    staging_payload="$staging_dir/agy.tar.gz"
+    extracted_binary="$staging_dir/antigravity"
+  else
+    staging_payload="$staging_dir/agy"
+    extracted_binary="$staging_payload"
+  fi
+
+  curl -fsSL "$url" -o "$staging_payload"
+
+  if [ "$os" = "darwin" ]; then
+    actual_hash="$(shasum -a 512 "$staging_payload" | cut -d' ' -f1)"
+  else
+    actual_hash="$(sha512sum "$staging_payload" | cut -d' ' -f1)"
+  fi
+
+  if [ "$actual_hash" != "$sha512" ]; then
+    echo "Antigravity checksum verification failed." >&2
+    exit 1
+  fi
+
+  mkdir -p "$HOME/.local/bin"
+
+  if [ "$is_tar_gz" = true ]; then
+    tar -xzf "$staging_payload" -C "$staging_dir" antigravity
+  fi
+
+  install -m 0755 "$extracted_binary" "$HOME/.local/bin/agy"
+
+  if [ "$os" = "darwin" ]; then
+    xattr -d com.apple.quarantine "$HOME/.local/bin/agy" 2>/dev/null || true
+  fi
+
+  "$HOME/.local/bin/agy" install --skip-path
+}
+
 install_icon_fonts() {
   {{ if eq .chezmoi.os "darwin" -}}
   local all_the_icons_dir="$HOME/Library/Fonts/all-the-icons"
@@ -615,9 +712,7 @@ fi
 
 install_codex_acp
 
-if ! command -v agy >/dev/null 2>&1; then
-  curl -fsSL https://antigravity.google/cli/install.sh | bash
-fi
+install_antigravity
 
 install_claude_cli
 
