@@ -80,11 +80,13 @@ instead, and `install-codex-latest` is not run.
   - `xremap.service`
   These are enabled idempotently on every `chezmoi apply`.
 - Linux-only Emacs client desktop entry
-- macOS-only Karabiner config, symlinked into `~/.config/dotfiles`, reproducing
-  the laptop-keyboard home-row mods (hold `a`/`;` = Command, `s`/`l` = Shift,
-  `d`/`k` = Option, `f`/`j` = Control). Spotlight is reached the same way as on
-  the Moonlander: hold `a` briefly, then press Space. The home-row remaps
-  exclude the Moonlander itself. Requires the `karabiner-elements` cask.
+- macOS-only Karabiner config directory, sourced from
+  `~/.config/dotfiles/karabiner/` and symlinked as `~/.config/karabiner`,
+  reproducing the laptop-keyboard home-row mods (hold `a`/`;` = Command,
+  `s`/`l` = Shift, `d`/`k` = Option, `f`/`j` = Control). Spotlight is reached
+  the same way as on the Moonlander: hold `a` briefly, then press Space. The
+  home-row remaps exclude the Moonlander itself. Requires the
+  `karabiner-elements` cask.
 
 ## Notes
 
