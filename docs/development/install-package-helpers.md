@@ -161,3 +161,13 @@ Use `configure_xremap_permissions` only in the Linux branch before or after inst
 - writes the udev rule for `/dev/uinput`.
 
 Do not call it on macOS. If xremap setup changes, keep the permission logic inside this helper so the Linux package branch stays readable.
+
+## `ensure_google_cloud_dnf_repo`
+
+Use `ensure_google_cloud_dnf_repo` only in the Linux branch before installing `google-cloud-cli`. It owns the Google-managed RPM repository setup so bootstrap can install `gcloud` into standard package-managed locations instead of using the archive installer and patching shell startup files.
+
+- writes `/etc/yum.repos.d/google-cloud-sdk.repo`;
+- selects the documented `el9` or `el10` repository family based on the local Fedora version;
+- uses the matching Google RPM signing key for that repository family.
+
+Keep the Fedora-version selection local to this helper so the package list stays readable. If Google changes the supported repository mapping, update this helper instead of scattering repo logic through the install branch.

@@ -236,6 +236,35 @@ ensure_google_chrome_dnf_repo() {
   fi
 }
 
+ensure_google_cloud_dnf_repo() {
+  local architecture
+  local fedora_version
+  local repo_suffix
+  local repo_key
+
+  architecture="$(uname -m)"
+  fedora_version="$(rpm -E %fedora)"
+
+  repo_key="https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg"
+  repo_suffix="el9"
+
+  # Google documents el9 for Fedora 41/42 and el10 for newer RHEL-compatible installs.
+  if [[ "$fedora_version" -ge 43 ]]; then
+    repo_suffix="el10"
+    repo_key="https://packages.cloud.google.com/yum/doc/rpm-package-key-v10.gpg"
+  fi
+
+  sudo tee /etc/yum.repos.d/google-cloud-sdk.repo >/dev/null <<EOF
+[google-cloud-cli]
+name=Google Cloud CLI
+baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-${repo_suffix}-${architecture}
+enabled=1
+gpgcheck=1
+repo_gpgcheck=0
+gpgkey=${repo_key}
+EOF
+}
+
 ensure_tailscale_dnf_repo() {
   local repo_url="https://pkgs.tailscale.com/stable/fedora/tailscale.repo"
 
@@ -274,8 +303,10 @@ if command -v dnf >/dev/null 2>&1; then
   sudo dnf -y copr enable blakegardner/xremap
   ensure_tailscale_dnf_repo
   ensure_google_chrome_dnf_repo
+  ensure_google_cloud_dnf_repo
 
   run_with_colored_errors sudo dnf install -y \
+    awscli \
     chezmoi \
     direnv \
     docker-cli \
@@ -286,8 +317,10 @@ if command -v dnf >/dev/null 2>&1; then
     git-filter-repo \
     golang \
     google-chrome-stable \
+    google-cloud-cli \
     gstreamer1-plugin-openh264 \
     ghostty \
+    libxcrypt-compat.x86_64 \
     levien-inconsolata-fonts \
     mozilla-openh264 \
     moby-engine \
