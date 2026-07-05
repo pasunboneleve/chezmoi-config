@@ -14,3 +14,10 @@
 ## Roborev Reviews
 
 - Roborev reviews may use external model providers when needed to complete the repository review loop.
+
+## Branch Discipline
+
+- Prefer feature branches for ordinary code changes.
+- Direct commits on `main` are allowed when the user explicitly requests work on `main`.
+- Direct pushes from `main` are allowed only when the user explicitly requests the push.
+- Do not bypass validation, task hygiene, or review loops when working directly on `main`.

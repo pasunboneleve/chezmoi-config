@@ -6,7 +6,7 @@ Type=exec
 TimeoutStartSec=30
 WorkingDirectory=%h
 StandardOutput=journal
-ExecStart=xremap %h/.config/xremap/xremap.yml
+ExecStart=xremap --watch=config %h/.config/xremap/xremap.yml
 Restart=always
 
 [Install]
