@@ -2,12 +2,17 @@
 
 [`run_before_10-install-packages.sh.tmpl`](../../run_before_10-install-packages.sh.tmpl) is a [chezmoi](https://www.chezmoi.io/) script template for system package-manager work. It exits unless `CHEZMOI_INSTALL_PACKAGES=1` is set.
 
+On Linux, the system package branch skips `dnf` and other sudo-backed setup
+when sudo is unavailable. That lets the later userland hooks continue for users
+that can install tools into their own home directory but cannot change system
+packages.
+
 Userland installers that do not need system package-manager privileges belong
 in normal `run_after_*` hooks. In particular,
 [`run_after_22-install-userland-tools.sh.tmpl`](../../run_after_22-install-userland-tools.sh.tmpl)
-owns Node through nvm, Rust through rustup, prebuilt release binaries,
-Go/Cargo/Bun/uv-installed CLIs, and remote script installers such as Roborev and
-Beads.
+owns Node through nvm, Rust through rustup, Haskell tools through GHCup,
+prebuilt release binaries, Go/Cargo/Bun/uv-installed CLIs, and remote script
+installers such as Roborev and Beads.
 
 ## Adding Install Steps
 
