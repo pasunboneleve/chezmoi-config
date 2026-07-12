@@ -9,10 +9,18 @@ packages.
 
 Userland installers that do not need system package-manager privileges belong
 in normal `run_after_*` hooks. In particular,
+[`run_after_21-install-ghcup.sh.tmpl`](../../run_after_21-install-ghcup.sh.tmpl)
+owns Haskell tools through GHCup, and
 [`run_after_22-install-userland-tools.sh.tmpl`](../../run_after_22-install-userland-tools.sh.tmpl)
-owns Node through nvm, Rust through rustup, Haskell tools through GHCup,
-prebuilt release binaries, Go/Cargo/Bun/uv-installed CLIs, and remote script
-installers such as Roborev and Beads.
+owns Node through nvm, Rust through rustup, prebuilt release binaries,
+Go/Cargo/Bun/uv-installed CLIs, and remote script installers such as Roborev and
+Beads.
+
+Kata is installed from the upstream prebuilt release installer at
+`https://katatracker.com/install.sh`. The Linux user service runs
+`kata` through an explicit PATH that prefers `~/.local/bin` and then
+`/usr/local/bin`, so the daemon uses the release binary instead of an older
+`~/go/bin/kata` source build.
 
 ## Adding Install Steps
 

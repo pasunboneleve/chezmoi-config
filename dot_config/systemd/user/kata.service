@@ -4,7 +4,8 @@ After=default.target
 
 [Service]
 Type=exec
-ExecStart=%h/go/bin/kata daemon start
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/env kata daemon start
 Restart=on-failure
 RestartSec=5
 

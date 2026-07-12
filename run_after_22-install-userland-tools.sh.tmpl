@@ -678,11 +678,23 @@ if ! command -v roborev >/dev/null 2>&1; then
   install_from_script roborev https://roborev.io/install.sh
 fi
 
+install_kata() {
+  local kata_path
+
+  kata_path="$(command -v kata 2>/dev/null || true)"
+  if [ -n "$kata_path" ] && [ "$kata_path" != "$HOME/go/bin/kata" ]; then
+    return
+  fi
+
+  install_from_script kata https://katatracker.com/install.sh
+  rm -f "$HOME/go/bin/kata"
+}
+
 if ! command -v bd >/dev/null 2>&1; then
   install_from_script beads https://raw.githubusercontent.com/gastownhall/beads/main/scripts/install.sh
 fi
 
-install_go_tool kata go.kenn.io/kata/cmd/kata@latest
+install_kata
 install_jira
 install_skilpel
 install_rush
