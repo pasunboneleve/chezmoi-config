@@ -60,7 +60,7 @@ instead, and `install-codex-latest` is not run.
 ## Managed Highlights
 
 - `~/.config/dotfiles` from `github.com/pasunboneleve/dotfiles`
-- `~/.zshrc` and `~/.zshenv`, symlinked into `~/.config/dotfiles`
+- `~/.zprofile`, `~/.zshrc`, and `~/.zshenv`, symlinked into `~/.config/dotfiles`
 - default login shell set to `zsh`
 - `~/.gitconfig`
 - `~/.codex/config.toml`, with required Codex defaults and MCP server entries preserved without duplication

@@ -11,6 +11,7 @@ new target path needs to point into that checkout.
 
 Current symlinked targets:
 
+- `~/.zprofile` -> `~/.config/dotfiles/zprofile`
 - `~/.zshenv` -> `~/.config/dotfiles/zshenv`
 - `~/.zshrc` -> `~/.config/dotfiles/zshrc`
 - `~/.ghci` -> `~/.config/dotfiles/ghci`
