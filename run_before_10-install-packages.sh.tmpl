@@ -42,8 +42,17 @@ run_with_colored_errors() {
   return "$status"
 }
 
-sudo_available() {
-  command -v sudo >/dev/null 2>&1 && sudo -n -v >/dev/null 2>&1
+sudo_authentication_failed=0
+
+authenticate_sudo() {
+  if ! command -v sudo >/dev/null 2>&1; then
+    return 1
+  fi
+
+  echo "Authenticating sudo for system package installation."
+  if ! sudo -v; then
+    return 1
+  fi
 }
 
 ensure_emacs() {
@@ -53,8 +62,8 @@ ensure_emacs() {
   fi
 
   if command -v dnf >/dev/null 2>&1; then
-    if ! sudo_available; then
-      echo "Skipping Emacs install: sudo is unavailable."
+    if [ "$sudo_authentication_failed" = "1" ] || ! authenticate_sudo; then
+      echo "Skipping Emacs install: sudo is unavailable or authentication failed."
       return 1
     fi
 
@@ -312,8 +321,9 @@ install_bitwarden_desktop_rpm() {
 }
 
 if command -v dnf >/dev/null 2>&1; then
-  if ! sudo_available; then
-    echo "Skipping Linux system package installation because sudo is unavailable."
+  if ! authenticate_sudo; then
+    sudo_authentication_failed=1
+    echo "Skipping Linux system package installation because sudo is unavailable or authentication failed."
     echo "Userland package hooks will still run later in this chezmoi apply."
   else
     sudo dnf -y copr enable scottames/ghostty
