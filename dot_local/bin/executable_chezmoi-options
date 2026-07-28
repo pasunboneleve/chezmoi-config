@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+Show bootstrap options for this chezmoi configuration.
+
+Run these commands from the dotfiles repository:
+
+  Normal apply
+    chezmoi --source . apply
+
+  Install system packages
+    chezmoi --source . --override-data '{"installPackages":true}' apply
+
+  Install system packages without the private Emacs checkout or batch setup
+    chezmoi --source . --override-data '{"installPackages":true,"skipEmacsConfig":true}' apply
+
+Options:
+  installPackages    Install operating-system packages. Default: false.
+  skipEmacsConfig    Skip the private Emacs checkout and batch setup. Default: false.
+USAGE
+}
+
+case "${1:-}" in
+  ""|-h|--help)
+    usage
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac

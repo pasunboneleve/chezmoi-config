@@ -6,6 +6,9 @@
 chezmoi --source . --override-data '{"installPackages":true}' apply
 ```
 
+After this configuration has been applied, run `chezmoi-options` to display
+the supported bootstrap options and their commands.
+
 On Linux, the system package branch prompts for sudo authentication before
 running `dnf` and other sudo-backed setup. It skips those steps only when sudo
 is unavailable or authentication fails, letting later userland hooks continue

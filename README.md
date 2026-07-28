@@ -44,6 +44,8 @@ Installer helper usage is documented in
 [docs/development/install-package-helpers.md](docs/development/install-package-helpers.md).
 External dotfile checkout ownership is documented in
 [docs/development/external-dotfiles.md](docs/development/external-dotfiles.md).
+After applying this configuration, run `chezmoi-options` to display the
+available bootstrap options and copyable commands.
 
 On Fedora, `dnf` installs the zsh plugins it packages
 (`zsh-autosuggestions` and `zsh-syntax-highlighting`). The install script
