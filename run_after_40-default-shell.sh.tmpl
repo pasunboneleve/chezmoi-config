@@ -11,7 +11,7 @@ exit 0
 zsh_path="$(command -v zsh || true)"
 
 if [[ -z "$zsh_path" ]]; then
-  echo "Skipping default shell change: zsh is not installed. Set CHEZMOI_INSTALL_PACKAGES=1 and apply again to install packages first."
+  echo "Skipping default shell change: zsh is not installed. Apply with --override-data '{\"installPackages\":true}' to install packages first."
   exit 0
 fi
 

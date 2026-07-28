@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ "${CHEZMOI_INSTALL_PACKAGES:-0}" != "1" ]; then
-  echo "Skipping package installation. Set CHEZMOI_INSTALL_PACKAGES=1 to enable it."
+{{ if not (get . "installPackages") -}}
+echo "Skipping package installation. Pass --override-data '{\"installPackages\":true}' to chezmoi to enable it."
   exit 0
-fi
+{{ end -}}
 
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/go/bin:$PATH"
 
-skip_emacs_config="${CHEZMOI_SKIP_EMACS_CONFIG:-0}"
+skip_emacs_config="{{ if get . "skipEmacsConfig" }}1{{ else }}0{{ end }}"
 
 if [ -n "${NO_COLOR:-}" ]; then
   red=""
@@ -152,7 +152,7 @@ install_emacs_packages() {
   local -a emacs_args
 
   if [ "$skip_emacs_config" = "1" ]; then
-    echo "Skipping Emacs config setup because CHEZMOI_SKIP_EMACS_CONFIG=1."
+    echo "Skipping Emacs config setup because skipEmacsConfig is enabled."
     return
   fi
 

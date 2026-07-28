@@ -1,4 +1,4 @@
-{{- if ne (env "CHEZMOI_SKIP_EMACS_CONFIG") "1" }}
+{{- if not (get . "skipEmacsConfig") }}
 [".config/emacs"]
 type = "git-repo"
 url = "git@github.com:pasunboneleve/emacs.d.git"

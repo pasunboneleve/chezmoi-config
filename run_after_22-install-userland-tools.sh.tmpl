@@ -221,7 +221,7 @@ install_go_tool() {
   fi
 
   if ! command -v go >/dev/null 2>&1; then
-    echo "$executable requires go. Run CHEZMOI_INSTALL_PACKAGES=1 chezmoi apply to install system packages first." >&2
+    echo "$executable requires go. Run chezmoi --override-data '{\"installPackages\":true}' apply to install system packages first." >&2
     exit 1
   fi
 

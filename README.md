@@ -22,7 +22,7 @@ chezmoi --source . apply
 Package installation is opt-in:
 
 ```sh
-CHEZMOI_INSTALL_PACKAGES=1 chezmoi --source . apply
+chezmoi --source . --override-data '{"installPackages":true}' apply
 ```
 
 Normal `chezmoi --source . apply` also runs userland tool installers for tools
@@ -37,7 +37,7 @@ Agent or service users that cannot access the private Emacs config repository
 can skip that external checkout and the Emacs batch setup:
 
 ```sh
-CHEZMOI_SKIP_EMACS_CONFIG=1 chezmoi --source . apply
+chezmoi --source . --override-data '{"installPackages":true,"skipEmacsConfig":true}' apply
 ```
 
 Installer helper usage is documented in

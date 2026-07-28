@@ -1,6 +1,10 @@
 # Install Package Helpers
 
-[`run_before_10-install-packages.sh.tmpl`](../../run_before_10-install-packages.sh.tmpl) is a [chezmoi](https://www.chezmoi.io/) script template for system package-manager work. It exits unless `CHEZMOI_INSTALL_PACKAGES=1` is set.
+[`run_before_10-install-packages.sh.tmpl`](../../run_before_10-install-packages.sh.tmpl) is a [chezmoi](https://www.chezmoi.io/) script template for system package-manager work. It exits unless chezmoi template data enables `installPackages`:
+
+```sh
+chezmoi --source . --override-data '{"installPackages":true}' apply
+```
 
 On Linux, the system package branch prompts for sudo authentication before
 running `dnf` and other sudo-backed setup. It skips those steps only when sudo
@@ -156,10 +160,14 @@ Use `install_emacs_packages` after every other install step in the operating-sys
 install_emacs_packages
 ```
 
-Set `CHEZMOI_SKIP_EMACS_CONFIG=1` to skip the personal Emacs config checkout
-and batch setup. Use this for agent or service users that need language tools
-from the package installer but do not have SSH access to the private Emacs
-config repository.
+Set `skipEmacsConfig` through chezmoi template data to skip the personal Emacs
+config checkout and batch setup. Use this for agent or service users that need
+language tools from the package installer but do not have SSH access to the
+private Emacs config repository.
+
+```sh
+chezmoi --source . --override-data '{"installPackages":true,"skipEmacsConfig":true}' apply
+```
 
 Keep this call at the end of each branch so Emacs sees tools installed earlier in the bootstrap run.
 
