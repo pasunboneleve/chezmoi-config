@@ -2,9 +2,9 @@
 
 set -euo pipefail
 
-# Codex publishes Sigstore bundles only for its Linux musl targets, so the
-# verified-download flow below cannot be reproduced on macOS. On darwin, codex
-# is installed from the Homebrew cask instead (see run_before_10-install-packages).
+# The complete Codex package keeps its helper executables and resources in a
+# versioned directory. Stable symlinks expose the public commands without
+# flattening the package layout or losing files added by future releases.
 if [[ "$(uname -s)" != "Linux" ]]; then
   printf 'install-codex-latest supports Linux only; on macOS run: brew install --cask codex\n' >&2
   exit 1
@@ -12,9 +12,11 @@ fi
 
 readonly CODEX_REPO_API_URL="https://api.github.com/repos/openai/codex/releases/latest"
 readonly CODEX_TARGET_TRIPLE="x86_64-unknown-linux-musl"
-readonly CODEX_ARCHIVE_NAME="codex-${CODEX_TARGET_TRIPLE}.tar.gz"
-readonly CODEX_BUNDLE_NAME="codex-${CODEX_TARGET_TRIPLE}.sigstore"
-readonly CODEX_EXTRACTED_BINARY_NAME="codex-${CODEX_TARGET_TRIPLE}"
+readonly CODEX_PACKAGE_ARCHIVE_NAME="codex-package-${CODEX_TARGET_TRIPLE}.tar.gz"
+readonly CODEX_PACKAGE_CHECKSUMS_NAME="codex-package_SHA256SUMS"
+readonly CODEX_BINARY_SIGSTORE_NAME="codex-${CODEX_TARGET_TRIPLE}.sigstore"
+readonly CODE_MODE_HOST_SIGSTORE_NAME="codex-code-mode-host-${CODEX_TARGET_TRIPLE}.sigstore"
+readonly BWRAP_SIGSTORE_NAME="bwrap-${CODEX_TARGET_TRIPLE}.sigstore"
 readonly CODEX_WORKFLOW_PATH=".github/workflows/rust-release.yml"
 readonly CODEX_CERTIFICATE_OIDC_ISSUER="https://token.actions.githubusercontent.com"
 
@@ -24,7 +26,12 @@ readonly COSIGN_SIGNATURE_JSON_NAME="cosign-linux-amd64-kms.sigstore.json"
 readonly COSIGN_PUBLIC_KEY_NAME="release-cosign.pub"
 
 readonly INSTALL_DIR="${HOME}/.local/bin"
-readonly INSTALL_PATH="${INSTALL_DIR}/codex"
+readonly CODEX_HOME_DIR="${CODEX_HOME:-${HOME}/.codex}"
+readonly STANDALONE_ROOT="${CODEX_HOME_DIR}/packages/standalone"
+readonly RELEASES_DIR="${STANDALONE_ROOT}/releases"
+readonly CURRENT_LINK="${STANDALONE_ROOT}/current"
+readonly CODEX_LINK="${INSTALL_DIR}/codex"
+readonly CODE_MODE_HOST_LINK="${INSTALL_DIR}/codex-code-mode-host"
 
 require_command() {
   local command_name=$1
@@ -35,14 +42,160 @@ require_command() {
   fi
 }
 
-download_release_asset_url() {
+release_asset_field() {
   local release_json_path=$1
   local asset_name=$2
+  local field_name=$3
 
-  jq -r --arg name "${asset_name}" '.assets[] | select(.name == $name) | .browser_download_url' "${release_json_path}"
+  jq -r \
+    --arg name "${asset_name}" \
+    --arg field "${field_name}" \
+    '[.assets[] | select(.name == $name)][0][$field] // empty' \
+    "${release_json_path}"
+}
+
+validate_release_asset() {
+  local asset_name=$1
+  local asset_url=$2
+  local asset_digest=$3
+  local tag_name=$4
+
+  if [[ -z "${asset_url}" ]]; then
+    printf 'Could not find release asset %s for Codex tag %s.\n' "${asset_name}" "${tag_name}" >&2
+    exit 1
+  fi
+
+  if [[ ! "${asset_digest}" =~ ^sha256:[[:xdigit:]]{64}$ ]]; then
+    printf 'Could not find a valid SHA-256 digest for Codex release asset %s.\n' "${asset_name}" >&2
+    exit 1
+  fi
+}
+
+require_asset_url() {
+  local asset_name=$1
+  local asset_url=$2
+  local tag_name=$3
+
+  if [[ -z "${asset_url}" ]]; then
+    printf 'Could not find release asset %s for tag %s.\n' "${asset_name}" "${tag_name}" >&2
+    exit 1
+  fi
+}
+
+sha256_digest() {
+  sha256sum "$1" | awk '{print $1}'
+}
+
+verify_digest() {
+  local file_path=$1
+  local expected_digest=$2
+  local actual_digest
+
+  actual_digest=$(sha256_digest "${file_path}")
+  if [[ "${actual_digest}" != "${expected_digest}" ]]; then
+    printf 'SHA-256 mismatch for %s.\nExpected: %s\nActual:   %s\n' \
+      "${file_path}" "${expected_digest}" "${actual_digest}" >&2
+    exit 1
+  fi
+}
+
+download_verified_codex_asset() {
+  local asset_name=$1
+  local output_path=$2
+  local asset_url
+  local asset_digest
+
+  asset_url=$(release_asset_field "${RELEASE_JSON_PATH}" "${asset_name}" browser_download_url)
+  asset_digest=$(release_asset_field "${RELEASE_JSON_PATH}" "${asset_name}" digest)
+  validate_release_asset "${asset_name}" "${asset_url}" "${asset_digest}" "${CODEX_TAG_NAME}"
+
+  printf 'Downloading and verifying %s\n' "${asset_name}"
+  curl -fsSL "${asset_url}" -o "${output_path}"
+  verify_digest "${output_path}" "${asset_digest#sha256:}"
+}
+
+download_verified_cosign() {
+  local cosign_release_json_path=$1
+  local cosign_binary_path=$2
+  local cosign_signature_json_path=$3
+  local cosign_public_key_path=$4
+  local cosign_signature_path=$5
+  local cosign_tag_name
+  local cosign_binary_url
+  local cosign_signature_json_url
+  local cosign_public_key_url
+
+  printf 'Fetching latest cosign release metadata from %s\n' "${COSIGN_REPO_API_URL}"
+  curl -fsSL "${COSIGN_REPO_API_URL}" -o "${cosign_release_json_path}"
+
+  cosign_tag_name=$(jq -r '.tag_name // empty' "${cosign_release_json_path}")
+  cosign_binary_url=$(release_asset_field "${cosign_release_json_path}" "${COSIGN_BINARY_NAME}" browser_download_url)
+  cosign_signature_json_url=$(release_asset_field "${cosign_release_json_path}" "${COSIGN_SIGNATURE_JSON_NAME}" browser_download_url)
+  cosign_public_key_url=$(release_asset_field "${cosign_release_json_path}" "${COSIGN_PUBLIC_KEY_NAME}" browser_download_url)
+
+  if [[ -z "${cosign_tag_name}" ]]; then
+    printf 'Could not determine the latest cosign release tag.\n' >&2
+    exit 1
+  fi
+  require_asset_url "${COSIGN_BINARY_NAME}" "${cosign_binary_url}" "${cosign_tag_name}"
+  require_asset_url "${COSIGN_SIGNATURE_JSON_NAME}" "${cosign_signature_json_url}" "${cosign_tag_name}"
+  require_asset_url "${COSIGN_PUBLIC_KEY_NAME}" "${cosign_public_key_url}" "${cosign_tag_name}"
+
+  printf 'Downloading and verifying %s\n' "${COSIGN_BINARY_NAME}"
+  curl -fsSL "${cosign_binary_url}" -o "${cosign_binary_path}"
+  curl -fsSL "${cosign_signature_json_url}" -o "${cosign_signature_json_path}"
+  curl -fsSL "${cosign_public_key_url}" -o "${cosign_public_key_path}"
+  jq -r '.messageSignature.signature' "${cosign_signature_json_path}" | base64 -d > "${cosign_signature_path}"
+  openssl dgst -sha256 \
+    -verify "${cosign_public_key_path}" \
+    -signature "${cosign_signature_path}" \
+    "${cosign_binary_path}" >/dev/null
+  chmod 0755 "${cosign_binary_path}"
+}
+
+package_digest_from_checksums() {
+  local checksums_path=$1
+  local package_name=$2
+
+  awk -v package_name="${package_name}" '
+    $2 == package_name && $1 ~ /^[[:xdigit:]]{64}$/ {
+      print tolower($1)
+      found = 1
+      exit
+    }
+    END {
+      if (!found) {
+        exit 1
+      }
+    }
+  ' "${checksums_path}"
+}
+
+replace_with_symlink() {
+  local target_path=$1
+  local link_path=$2
+  local temporary_link="${link_path}.tmp.$$"
+
+  rm -f "${temporary_link}"
+  ln -s "${target_path}" "${temporary_link}"
+  mv -Tf "${temporary_link}" "${link_path}"
+}
+
+restore_current_link() {
+  local previous_target=$1
+
+  if [[ -n "${previous_target}" ]]; then
+    replace_with_symlink "${previous_target}" "${CURRENT_LINK}"
+  else
+    rm -f "${CURRENT_LINK}"
+  fi
 }
 
 cleanup() {
+  if [[ -n "${STAGED_RELEASE_DIR:-}" && -d "${STAGED_RELEASE_DIR}" ]]; then
+    rm -rf "${STAGED_RELEASE_DIR}"
+  fi
+
   if [[ -n "${TMPDIR_PATH:-}" && -d "${TMPDIR_PATH}" ]]; then
     rm -rf "${TMPDIR_PATH}"
   fi
@@ -50,127 +203,216 @@ cleanup() {
 
 trap cleanup EXIT
 
-require_command curl
-require_command jq
-require_command tar
-require_command mktemp
-require_command install
-require_command mv
-require_command chmod
-require_command openssl
+require_command awk
 require_command base64
+require_command chmod
+require_command curl
+require_command diff
+require_command jq
+require_command ln
+require_command mkdir
+require_command mktemp
+require_command mv
+require_command openssl
+require_command readlink
+require_command rm
+require_command sha256sum
+require_command tar
 
 TMPDIR_PATH=$(mktemp -d)
 readonly TMPDIR_PATH
 
-readonly CODEX_RELEASE_JSON_PATH="${TMPDIR_PATH}/codex-release.json"
-readonly CODEX_ARCHIVE_PATH="${TMPDIR_PATH}/${CODEX_ARCHIVE_NAME}"
-readonly CODEX_BUNDLE_PATH="${TMPDIR_PATH}/${CODEX_BUNDLE_NAME}"
-readonly CODEX_EXTRACT_DIR="${TMPDIR_PATH}/codex-extract"
-readonly CODEX_CANDIDATE_PATH="${CODEX_EXTRACT_DIR}/${CODEX_EXTRACTED_BINARY_NAME}"
-
+readonly RELEASE_JSON_PATH="${TMPDIR_PATH}/codex-release.json"
+readonly PACKAGE_ARCHIVE_PATH="${TMPDIR_PATH}/${CODEX_PACKAGE_ARCHIVE_NAME}"
+readonly PACKAGE_CHECKSUMS_PATH="${TMPDIR_PATH}/${CODEX_PACKAGE_CHECKSUMS_NAME}"
+readonly CODEX_BINARY_SIGSTORE_PATH="${TMPDIR_PATH}/${CODEX_BINARY_SIGSTORE_NAME}"
+readonly CODE_MODE_HOST_SIGSTORE_PATH="${TMPDIR_PATH}/${CODE_MODE_HOST_SIGSTORE_NAME}"
+readonly BWRAP_SIGSTORE_PATH="${TMPDIR_PATH}/${BWRAP_SIGSTORE_NAME}"
 readonly COSIGN_RELEASE_JSON_PATH="${TMPDIR_PATH}/cosign-release.json"
 readonly COSIGN_BINARY_PATH="${TMPDIR_PATH}/${COSIGN_BINARY_NAME}"
 readonly COSIGN_SIGNATURE_JSON_PATH="${TMPDIR_PATH}/${COSIGN_SIGNATURE_JSON_NAME}"
 readonly COSIGN_PUBLIC_KEY_PATH="${TMPDIR_PATH}/${COSIGN_PUBLIC_KEY_NAME}"
 readonly COSIGN_SIGNATURE_PATH="${TMPDIR_PATH}/${COSIGN_BINARY_NAME}.sig"
 
-printf 'Fetching latest cosign release metadata from %s\n' "${COSIGN_REPO_API_URL}"
-curl -fsSL "${COSIGN_REPO_API_URL}" -o "${COSIGN_RELEASE_JSON_PATH}"
-
-COSIGN_TAG_NAME=$(jq -r '.tag_name' "${COSIGN_RELEASE_JSON_PATH}")
-COSIGN_BINARY_URL=$(download_release_asset_url "${COSIGN_RELEASE_JSON_PATH}" "${COSIGN_BINARY_NAME}")
-COSIGN_SIGNATURE_JSON_URL=$(download_release_asset_url "${COSIGN_RELEASE_JSON_PATH}" "${COSIGN_SIGNATURE_JSON_NAME}")
-COSIGN_PUBLIC_KEY_URL=$(download_release_asset_url "${COSIGN_RELEASE_JSON_PATH}" "${COSIGN_PUBLIC_KEY_NAME}")
-
-if [[ -z "${COSIGN_TAG_NAME}" || "${COSIGN_TAG_NAME}" == "null" ]]; then
-  printf 'Could not determine the latest cosign release tag.\n' >&2
-  exit 1
-fi
-
-if [[ -z "${COSIGN_BINARY_URL}" || "${COSIGN_BINARY_URL}" == "null" ]]; then
-  printf 'Could not find release asset %s for cosign tag %s.\n' "${COSIGN_BINARY_NAME}" "${COSIGN_TAG_NAME}" >&2
-  exit 1
-fi
-
-if [[ -z "${COSIGN_SIGNATURE_JSON_URL}" || "${COSIGN_SIGNATURE_JSON_URL}" == "null" ]]; then
-  printf 'Could not find release asset %s for cosign tag %s.\n' "${COSIGN_SIGNATURE_JSON_NAME}" "${COSIGN_TAG_NAME}" >&2
-  exit 1
-fi
-
-if [[ -z "${COSIGN_PUBLIC_KEY_URL}" || "${COSIGN_PUBLIC_KEY_URL}" == "null" ]]; then
-  printf 'Could not find release asset %s for cosign tag %s.\n' "${COSIGN_PUBLIC_KEY_NAME}" "${COSIGN_TAG_NAME}" >&2
-  exit 1
-fi
-
-printf 'Downloading %s\n' "${COSIGN_BINARY_NAME}"
-curl -fsSL "${COSIGN_BINARY_URL}" -o "${COSIGN_BINARY_PATH}"
-
-printf 'Downloading %s\n' "${COSIGN_SIGNATURE_JSON_NAME}"
-curl -fsSL "${COSIGN_SIGNATURE_JSON_URL}" -o "${COSIGN_SIGNATURE_JSON_PATH}"
-
-printf 'Downloading %s\n' "${COSIGN_PUBLIC_KEY_NAME}"
-curl -fsSL "${COSIGN_PUBLIC_KEY_URL}" -o "${COSIGN_PUBLIC_KEY_PATH}"
-
-jq -r '.messageSignature.signature' "${COSIGN_SIGNATURE_JSON_PATH}" | base64 -d > "${COSIGN_SIGNATURE_PATH}"
-
-printf 'Verifying downloaded cosign binary with the published cosign release key\n'
-openssl dgst -sha256 \
-  -verify "${COSIGN_PUBLIC_KEY_PATH}" \
-  -signature "${COSIGN_SIGNATURE_PATH}" \
-  "${COSIGN_BINARY_PATH}" >/dev/null
-
-chmod 0755 "${COSIGN_BINARY_PATH}"
-
 printf 'Fetching latest Codex release metadata from %s\n' "${CODEX_REPO_API_URL}"
-curl -fsSL "${CODEX_REPO_API_URL}" -o "${CODEX_RELEASE_JSON_PATH}"
+curl -fsSL "${CODEX_REPO_API_URL}" -o "${RELEASE_JSON_PATH}"
 
-CODEX_TAG_NAME=$(jq -r '.tag_name' "${CODEX_RELEASE_JSON_PATH}")
-CODEX_ARCHIVE_URL=$(download_release_asset_url "${CODEX_RELEASE_JSON_PATH}" "${CODEX_ARCHIVE_NAME}")
-CODEX_BUNDLE_URL=$(download_release_asset_url "${CODEX_RELEASE_JSON_PATH}" "${CODEX_BUNDLE_NAME}")
-
-if [[ -z "${CODEX_TAG_NAME}" || "${CODEX_TAG_NAME}" == "null" ]]; then
-  printf 'Could not determine the latest Codex release tag.\n' >&2
+CODEX_TAG_NAME=$(jq -r '.tag_name // empty' "${RELEASE_JSON_PATH}")
+readonly CODEX_TAG_NAME
+if [[ ! "${CODEX_TAG_NAME}" =~ ^rust-v(.+)$ ]]; then
+  printf 'Could not determine a valid Codex release version from tag %s.\n' "${CODEX_TAG_NAME:-<empty>}" >&2
   exit 1
 fi
 
-if [[ -z "${CODEX_ARCHIVE_URL}" || "${CODEX_ARCHIVE_URL}" == "null" ]]; then
-  printf 'Could not find release asset %s for Codex tag %s.\n' "${CODEX_ARCHIVE_NAME}" "${CODEX_TAG_NAME}" >&2
+readonly CODEX_VERSION="${CODEX_TAG_NAME#rust-v}"
+PACKAGE_ARCHIVE_URL=$(release_asset_field "${RELEASE_JSON_PATH}" "${CODEX_PACKAGE_ARCHIVE_NAME}" browser_download_url)
+readonly PACKAGE_ARCHIVE_URL
+PACKAGE_ARCHIVE_RELEASE_DIGEST=$(release_asset_field "${RELEASE_JSON_PATH}" "${CODEX_PACKAGE_ARCHIVE_NAME}" digest)
+readonly PACKAGE_ARCHIVE_RELEASE_DIGEST
+PACKAGE_CHECKSUMS_URL=$(release_asset_field "${RELEASE_JSON_PATH}" "${CODEX_PACKAGE_CHECKSUMS_NAME}" browser_download_url)
+readonly PACKAGE_CHECKSUMS_URL
+PACKAGE_CHECKSUMS_RELEASE_DIGEST=$(release_asset_field "${RELEASE_JSON_PATH}" "${CODEX_PACKAGE_CHECKSUMS_NAME}" digest)
+readonly PACKAGE_CHECKSUMS_RELEASE_DIGEST
+
+validate_release_asset \
+  "${CODEX_PACKAGE_ARCHIVE_NAME}" \
+  "${PACKAGE_ARCHIVE_URL}" \
+  "${PACKAGE_ARCHIVE_RELEASE_DIGEST}" \
+  "${CODEX_TAG_NAME}"
+validate_release_asset \
+  "${CODEX_PACKAGE_CHECKSUMS_NAME}" \
+  "${PACKAGE_CHECKSUMS_URL}" \
+  "${PACKAGE_CHECKSUMS_RELEASE_DIGEST}" \
+  "${CODEX_TAG_NAME}"
+
+printf 'Downloading and verifying %s\n' "${CODEX_PACKAGE_CHECKSUMS_NAME}"
+curl -fsSL "${PACKAGE_CHECKSUMS_URL}" -o "${PACKAGE_CHECKSUMS_PATH}"
+verify_digest "${PACKAGE_CHECKSUMS_PATH}" "${PACKAGE_CHECKSUMS_RELEASE_DIGEST#sha256:}"
+
+PACKAGE_CHECKSUM_DIGEST=$(package_digest_from_checksums "${PACKAGE_CHECKSUMS_PATH}" "${CODEX_PACKAGE_ARCHIVE_NAME}")
+readonly PACKAGE_CHECKSUM_DIGEST
+if [[ "${PACKAGE_CHECKSUM_DIGEST}" != "${PACKAGE_ARCHIVE_RELEASE_DIGEST#sha256:}" ]]; then
+  printf 'Codex package digest disagrees between release metadata and %s.\n' \
+    "${CODEX_PACKAGE_CHECKSUMS_NAME}" >&2
   exit 1
 fi
 
-if [[ -z "${CODEX_BUNDLE_URL}" || "${CODEX_BUNDLE_URL}" == "null" ]]; then
-  printf 'Could not find release asset %s for Codex tag %s.\n' "${CODEX_BUNDLE_NAME}" "${CODEX_TAG_NAME}" >&2
+printf 'Downloading and verifying %s\n' "${CODEX_PACKAGE_ARCHIVE_NAME}"
+curl -fsSL "${PACKAGE_ARCHIVE_URL}" -o "${PACKAGE_ARCHIVE_PATH}"
+verify_digest "${PACKAGE_ARCHIVE_PATH}" "${PACKAGE_CHECKSUM_DIGEST}"
+
+download_verified_codex_asset "${CODEX_BINARY_SIGSTORE_NAME}" "${CODEX_BINARY_SIGSTORE_PATH}"
+download_verified_codex_asset "${CODE_MODE_HOST_SIGSTORE_NAME}" "${CODE_MODE_HOST_SIGSTORE_PATH}"
+download_verified_codex_asset "${BWRAP_SIGSTORE_NAME}" "${BWRAP_SIGSTORE_PATH}"
+download_verified_cosign \
+  "${COSIGN_RELEASE_JSON_PATH}" \
+  "${COSIGN_BINARY_PATH}" \
+  "${COSIGN_SIGNATURE_JSON_PATH}" \
+  "${COSIGN_PUBLIC_KEY_PATH}" \
+  "${COSIGN_SIGNATURE_PATH}"
+
+STAGED_RELEASE_DIR="${RELEASES_DIR}/.staging.${CODEX_VERSION}-${CODEX_TARGET_TRIPLE}.$$"
+readonly STAGED_RELEASE_DIR
+
+mkdir -p "${RELEASES_DIR}"
+rm -rf "${STAGED_RELEASE_DIR}"
+mkdir -p "${STAGED_RELEASE_DIR}"
+printf 'Extracting complete Codex package to %s\n' "${STAGED_RELEASE_DIR}"
+tar -xzf "${PACKAGE_ARCHIVE_PATH}" -C "${STAGED_RELEASE_DIR}"
+
+readonly PACKAGE_MANIFEST_PATH="${STAGED_RELEASE_DIR}/codex-package.json"
+if ! jq -e \
+  --arg version "${CODEX_VERSION}" \
+  --arg target "${CODEX_TARGET_TRIPLE}" \
+  '.layoutVersion == 1 and
+   .version == $version and
+   .target == $target and
+   .variant == "codex" and
+   .entrypoint == "bin/codex" and
+   .resourcesDir == "codex-resources" and
+   .pathDir == "codex-path"' \
+  "${PACKAGE_MANIFEST_PATH}" >/dev/null; then
+  printf 'Codex package manifest does not match release %s for %s.\n' \
+    "${CODEX_VERSION}" "${CODEX_TARGET_TRIPLE}" >&2
   exit 1
 fi
 
-printf 'Downloading %s\n' "${CODEX_ARCHIVE_NAME}"
-curl -fsSL "${CODEX_ARCHIVE_URL}" -o "${CODEX_ARCHIVE_PATH}"
+readonly STAGED_CODEX_PATH="${STAGED_RELEASE_DIR}/bin/codex"
+readonly STAGED_CODE_MODE_HOST_PATH="${STAGED_RELEASE_DIR}/bin/codex-code-mode-host"
+readonly STAGED_RG_PATH="${STAGED_RELEASE_DIR}/codex-path/rg"
+readonly STAGED_BWRAP_PATH="${STAGED_RELEASE_DIR}/codex-resources/bwrap"
 
-printf 'Downloading %s\n' "${CODEX_BUNDLE_NAME}"
-curl -fsSL "${CODEX_BUNDLE_URL}" -o "${CODEX_BUNDLE_PATH}"
+for executable_path in \
+  "${STAGED_CODEX_PATH}" \
+  "${STAGED_CODE_MODE_HOST_PATH}" \
+  "${STAGED_RG_PATH}" \
+  "${STAGED_BWRAP_PATH}"; do
+  if [[ ! -f "${executable_path}" ]]; then
+    printf 'Codex package is incomplete; expected %s.\n' "${executable_path}" >&2
+    exit 1
+  fi
+  chmod 0755 "${executable_path}"
+done
 
-mkdir -p "${CODEX_EXTRACT_DIR}"
-printf 'Extracting codex from %s\n' "${CODEX_ARCHIVE_NAME}"
-tar -xzf "${CODEX_ARCHIVE_PATH}" -C "${CODEX_EXTRACT_DIR}"
-
-if [[ ! -f "${CODEX_CANDIDATE_PATH}" ]]; then
-  printf 'Expected extracted binary at %s, but it was not found.\n' "${CODEX_CANDIDATE_PATH}" >&2
-  exit 1
-fi
-
-CODEX_CERTIFICATE_IDENTITY="https://github.com/openai/codex/${CODEX_WORKFLOW_PATH}@refs/tags/${CODEX_TAG_NAME}"
-readonly CODEX_CERTIFICATE_IDENTITY
-
-printf 'Verifying extracted Codex binary with Sigstore\n'
+readonly CODEX_CERTIFICATE_IDENTITY="https://github.com/openai/codex/${CODEX_WORKFLOW_PATH}@refs/tags/${CODEX_TAG_NAME}"
+printf 'Verifying signed Codex package executables with Sigstore\n'
 "${COSIGN_BINARY_PATH}" verify-blob \
-  --bundle "${CODEX_BUNDLE_PATH}" \
+  --bundle "${CODEX_BINARY_SIGSTORE_PATH}" \
   --certificate-identity "${CODEX_CERTIFICATE_IDENTITY}" \
   --certificate-oidc-issuer "${CODEX_CERTIFICATE_OIDC_ISSUER}" \
-  "${CODEX_CANDIDATE_PATH}" >/dev/null
+  "${STAGED_CODEX_PATH}" >/dev/null
+"${COSIGN_BINARY_PATH}" verify-blob \
+  --bundle "${CODE_MODE_HOST_SIGSTORE_PATH}" \
+  --certificate-identity "${CODEX_CERTIFICATE_IDENTITY}" \
+  --certificate-oidc-issuer "${CODEX_CERTIFICATE_OIDC_ISSUER}" \
+  "${STAGED_CODE_MODE_HOST_PATH}" >/dev/null
+"${COSIGN_BINARY_PATH}" verify-blob \
+  --bundle "${BWRAP_SIGSTORE_PATH}" \
+  --certificate-identity "${CODEX_CERTIFICATE_IDENTITY}" \
+  --certificate-oidc-issuer "${CODEX_CERTIFICATE_OIDC_ISSUER}" \
+  "${STAGED_BWRAP_PATH}" >/dev/null
 
-install -d "${INSTALL_DIR}"
-chmod 0755 "${CODEX_CANDIDATE_PATH}"
-mv -f "${CODEX_CANDIDATE_PATH}" "${INSTALL_PATH}"
+STAGED_CODEX_VERSION_OUTPUT=$("${STAGED_CODEX_PATH}" --version)
+readonly STAGED_CODEX_VERSION_OUTPUT
+if [[ "${STAGED_CODEX_VERSION_OUTPUT}" != "codex-cli ${CODEX_VERSION}" ]]; then
+  printf 'Staged Codex command reported an unexpected version: %s\n' \
+    "${STAGED_CODEX_VERSION_OUTPUT}" >&2
+  exit 1
+fi
 
-printf 'Installed verified Codex binary to %s\n' "${INSTALL_PATH}"
+if [[ -f "${STAGED_RELEASE_DIR}/codex-resources/zsh/bin/zsh" ]]; then
+  chmod 0755 "${STAGED_RELEASE_DIR}/codex-resources/zsh/bin/zsh"
+fi
+ln -s bin/codex "${STAGED_RELEASE_DIR}/codex"
+
+CONTENT_RELEASE_DIR="${RELEASES_DIR}/${CODEX_VERSION}-${CODEX_TARGET_TRIPLE}-${PACKAGE_CHECKSUM_DIGEST}"
+if [[ -d "${CONTENT_RELEASE_DIR}" ]] &&
+   [[ -x "${CONTENT_RELEASE_DIR}/bin/codex" ]] &&
+   [[ -x "${CONTENT_RELEASE_DIR}/bin/codex-code-mode-host" ]] &&
+   [[ -x "${CONTENT_RELEASE_DIR}/codex-path/rg" ]] &&
+   [[ -x "${CONTENT_RELEASE_DIR}/codex-resources/bwrap" ]] &&
+   diff -qr --no-dereference "${STAGED_RELEASE_DIR}" "${CONTENT_RELEASE_DIR}" >/dev/null; then
+  RELEASE_DIR="${CONTENT_RELEASE_DIR}"
+  rm -rf "${STAGED_RELEASE_DIR}"
+else
+  RELEASE_DIR="${CONTENT_RELEASE_DIR}"
+  if [[ -e "${RELEASE_DIR}" || -L "${RELEASE_DIR}" ]]; then
+    RELEASE_DIR="${CONTENT_RELEASE_DIR}.replacement.$$"
+  fi
+  mv "${STAGED_RELEASE_DIR}" "${RELEASE_DIR}"
+fi
+readonly CONTENT_RELEASE_DIR
+readonly RELEASE_DIR
+
+mkdir -p "${INSTALL_DIR}" "${STANDALONE_ROOT}"
+
+# Keep command links anchored to current, then switch current only after the
+# staged tree has passed digest, manifest, Sigstore, and executable checks.
+PREVIOUS_CURRENT_TARGET=$(readlink "${CURRENT_LINK}" 2>/dev/null || true)
+readonly PREVIOUS_CURRENT_TARGET
+replace_with_symlink "${CURRENT_LINK}/bin/codex" "${CODEX_LINK}"
+replace_with_symlink "${CURRENT_LINK}/bin/codex-code-mode-host" "${CODE_MODE_HOST_LINK}"
+replace_with_symlink "${RELEASE_DIR}" "${CURRENT_LINK}"
+
+if ! INSTALLED_CODEX_VERSION_OUTPUT=$("${CODEX_LINK}" --version); then
+  restore_current_link "${PREVIOUS_CURRENT_TARGET}"
+  printf 'Installed Codex command failed validation; restored the previous release.\n' >&2
+  exit 1
+fi
+readonly INSTALLED_CODEX_VERSION_OUTPUT
+if [[ "${INSTALLED_CODEX_VERSION_OUTPUT}" != "codex-cli ${CODEX_VERSION}" ]]; then
+  restore_current_link "${PREVIOUS_CURRENT_TARGET}"
+  printf 'Installed Codex command reported %s; restored the previous release.\n' \
+    "${INSTALLED_CODEX_VERSION_OUTPUT}" >&2
+  exit 1
+fi
+
+if [[ ! -x "${CODE_MODE_HOST_LINK}" ]]; then
+  restore_current_link "${PREVIOUS_CURRENT_TARGET}"
+  printf 'Installed Codex code-mode host is not executable; restored the previous release.\n' >&2
+  exit 1
+fi
+
+printf '%s\n' "${INSTALLED_CODEX_VERSION_OUTPUT}"
+printf 'Installed complete Codex %s package to %s\n' "${CODEX_VERSION}" "${RELEASE_DIR}"
+printf 'Installed command links: %s and %s\n' "${CODEX_LINK}" "${CODE_MODE_HOST_LINK}"

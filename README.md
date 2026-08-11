@@ -54,10 +54,11 @@ and `zsh-z` into `~/.local/share/zsh/plugins` because those are not available
 from the enabled Fedora repos on this machine. On macOS, Homebrew installs the
 packaged zsh plugins directly.
 
-The Codex CLI is installed from a Sigstore-verified GitHub release on Linux
-(`install-codex-latest`). Codex publishes Sigstore bundles only for its Linux
-musl targets, so on macOS Codex is installed from the `codex` Homebrew cask
-instead, and `install-codex-latest` is not run.
+On Linux, `install-codex-latest` verifies the complete Codex release package
+against its published digests, verifies its signed executables with Sigstore,
+and installs its helper executables and bundled resources. On macOS, the
+`codex` Homebrew cask installs Codex instead, and `install-codex-latest` is not
+run.
 
 ## Managed Highlights
 
