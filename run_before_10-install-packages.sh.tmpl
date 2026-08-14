@@ -320,6 +320,15 @@ install_bitwarden_desktop_rpm() {
     'https://vault.bitwarden.com/download/?app=desktop&platform=linux&variant=rpm'
 }
 
+remove_legacy_userland_typst() {
+  local userland_typst="$HOME/.local/bin/typst"
+
+  if [ -e "$userland_typst" ] || [ -L "$userland_typst" ]; then
+    echo "Removing the legacy userland Typst binary at $userland_typst."
+    rm -f "$userland_typst"
+  fi
+}
+
 if command -v dnf >/dev/null 2>&1; then
   if ! authenticate_sudo; then
     sudo_authentication_failed=1
@@ -328,6 +337,7 @@ if command -v dnf >/dev/null 2>&1; then
   else
     sudo dnf -y copr enable scottames/ghostty
     sudo dnf -y copr enable blakegardner/xremap
+    sudo dnf -y copr enable claaj/typst
     ensure_tailscale_dnf_repo
     ensure_google_chrome_dnf_repo
     ensure_google_cloud_dnf_repo
@@ -360,6 +370,7 @@ if command -v dnf >/dev/null 2>&1; then
       restic \
       ripgrep \
       tailscale \
+      typst \
       unzip \
       xremap-gnome \
       zathura \
@@ -367,6 +378,7 @@ if command -v dnf >/dev/null 2>&1; then
       zsh-autosuggestions \
       zsh-syntax-highlighting
 
+    remove_legacy_userland_typst
     install_bitwarden_desktop_rpm
     enable_docker_service
     enable_tailscale_service

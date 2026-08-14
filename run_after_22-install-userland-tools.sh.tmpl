@@ -376,11 +376,8 @@ install_rumdl() {
   install_github_archive_binary_url rumdl "$url"
 }
 
-install_typst() {
+install_typst_userland() {
   case "$(uname -s):$(uname -m)" in
-    Linux:x86_64)
-      install_github_archive_binary_asset typst typst/typst typst-x86_64-unknown-linux-musl.tar.xz
-      ;;
     Darwin:arm64|Darwin:aarch64)
       install_github_archive_binary_asset typst typst/typst typst-aarch64-apple-darwin.tar.xz
       ;;
@@ -701,7 +698,9 @@ install_rush
 install_devloop
 install_dress_rehearsal
 install_mdserve
-install_typst
+{{ if eq .chezmoi.os "darwin" -}}
+install_typst_userland
+{{ end -}}
 install_tinymist
 install_rumdl
 install_zellij

@@ -30,6 +30,13 @@ use an explicit PATH that prefers `~/.local/bin`, then local Bun, Cargo, and Go
 directories, so the daemons use the intended release binaries and can locate
 installed review agents.
 
+On Linux, [Typst](https://typst.app/) is a system package from the
+[claaj/typst COPR](https://copr.fedorainfracloud.org/coprs/claaj/typst/). The
+system-package phase enables that repository, installs the `typst` RPM, then
+removes the legacy `~/.local/bin/typst` archive binary so it cannot shadow
+`/usr/bin/typst`. On macOS, the userland hook continues to install Typst from
+the upstream release archive.
+
 ## Adding Install Steps
 
 Place system package steps in the operating-system branch that owns the dependency. Place userland tools in a normal `run_after_*` hook. Keep each step idempotent by checking the executable or target file first.
