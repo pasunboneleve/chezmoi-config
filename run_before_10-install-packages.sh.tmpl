@@ -320,6 +320,78 @@ install_bitwarden_desktop_rpm() {
     'https://vault.bitwarden.com/download/?app=desktop&platform=linux&variant=rpm'
 }
 
+install_epson_v300_driver() {
+  local archive_sha256="40588c4d7ad0e6049091b60b3a9ce895fe11180bd3f4f02e9e20189bc5aacbf6"
+  local archive_url="https://download2.ebz.epson.net/iscan/plugin/gt-f720/rpm/x64/iscan-gt-f720-bundle-2.30.4.x64.rpm.tar.gz"
+  local bundle_name="iscan-gt-f720-bundle-2.30.4.x64.rpm"
+  local staging_dir
+  local archive
+  local index
+  local package_file
+  local -a missing_packages=()
+  local -a package_specs
+  local -a packages
+
+  package_specs=(
+    iscan-data-1.39.2-1.noarch
+    iscan-2.30.4-2.x86_64
+    esci-interpreter-gt-f720-1.0.0-1.x86_64
+  )
+
+  if rpm -q --quiet "${package_specs[@]}"; then
+    echo "Epson Perfection V300 scanner driver is already installed."
+    return
+  fi
+
+  if [ "$(uname -m)" != "x86_64" ]; then
+    echo "Skipping Epson Perfection V300 scanner driver: Epson publishes this bundle only for x86_64 Linux."
+    return
+  fi
+
+  (
+    staging_dir="$(mktemp -d)"
+    trap 'rm -rf "$staging_dir"' EXIT
+    archive="$staging_dir/$bundle_name.tar.gz"
+
+    echo "Downloading the Epson Perfection V300 scanner driver."
+    curl --fail --location --silent --show-error "$archive_url" --output "$archive"
+    printf '%s  %s\n' "$archive_sha256" "$archive" | sha256sum --check -
+    tar -xzf "$archive" -C "$staging_dir"
+
+    packages=(
+      "$staging_dir/$bundle_name/data/iscan-data-1.39.2-1.noarch.rpm"
+      "$staging_dir/$bundle_name/core/iscan-2.30.4-2.x86_64.rpm"
+      "$staging_dir/$bundle_name/plugins/esci-interpreter-gt-f720-1.0.0-1.x86_64.rpm"
+    )
+
+    for index in "${!packages[@]}"; do
+      package_file="${packages[$index]}"
+      if [ ! -f "$package_file" ]; then
+        echo "Epson scanner bundle is missing the expected package: $package_file"
+        exit 1
+      fi
+
+      if ! rpm -q --quiet "${package_specs[$index]}"; then
+        missing_packages+=("$package_file")
+      fi
+    done
+
+    run_with_colored_errors sudo dnf install -y \
+      gtk2 \
+      libtool-ltdl \
+      libusb1 \
+      libxml2 \
+      libxslt \
+      sane-backends \
+      sane-backends-libs
+
+    # Fedora 44 rejects these legacy digestless RPMs. The pinned checksum of
+    # Epson's enclosing archive is the integrity boundary for this transaction.
+    run_with_colored_errors sudo rpm --upgrade --oldpackage --nodigest --nosignature "${missing_packages[@]}"
+    rpm -q "${package_specs[@]}"
+  )
+}
+
 remove_legacy_userland_typst() {
   local userland_typst="$HOME/.local/bin/typst"
 
@@ -345,6 +417,7 @@ if command -v dnf >/dev/null 2>&1; then
     run_with_colored_errors sudo dnf install -y \
       awscli \
       chezmoi \
+      curl \
       direnv \
       docker-cli \
       docker-compose \
@@ -379,6 +452,7 @@ if command -v dnf >/dev/null 2>&1; then
       zsh-syntax-highlighting
 
     remove_legacy_userland_typst
+    install_epson_v300_driver
     install_bitwarden_desktop_rpm
     enable_docker_service
     enable_tailscale_service

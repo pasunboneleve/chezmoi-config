@@ -37,6 +37,34 @@ removes the legacy `~/.local/bin/typst` archive binary so it cannot shadow
 `/usr/bin/typst`. On macOS, the userland hook continues to install Typst from
 the upstream release archive.
 
+On x86_64 Linux, the system-package phase installs the proprietary
+[Epson](https://download.ebz.epson.net/dsc/search/01/search/searchModule) Image
+Scan! driver required by the Perfection V300 Photo (`04b8:0131`). The standard
+SANE `epson2` backend does not support this scanner; it needs the `epkowa`
+backend and the GT-F720 interpreter.
+
+`install_epson_v300_driver` downloads Epson's 2.30.4 RPM bundle, verifies the
+enclosing archive against a pinned SHA-256 checksum, extracts it without root
+privileges, and uses `dnf` to install their Fedora runtime dependencies. The
+three legacy RPMs—`iscan-data`, `iscan`, and `esci-interpreter-gt-f720`—do not
+contain package digests accepted by Fedora 44. The helper therefore gives only
+those checksum-covered files to `rpm --nodigest --nosignature`; dependency
+checks and package scriptlets remain enabled. It does not run the bundle's
+`install.sh` or weaken verification for repository packages. Subsequent applies
+skip the download when all three pinned RPM versions are installed; a bundle
+update upgrades or downgrades mismatched versions to the configured release.
+Temporary files are removed on both success and failure. Epson does not publish
+this legacy bundle for other Linux architectures, so the helper reports and
+skips that unsupported case.
+
+When updating the driver, inspect a freshly downloaded official bundle and
+change the URL, checksum, expected directory, and RPM filenames together. Test
+the installed SANE backend with:
+
+```sh
+scanimage -L
+```
+
 ## Adding Install Steps
 
 Place system package steps in the operating-system branch that owns the dependency. Place userland tools in a normal `run_after_*` hook. Keep each step idempotent by checking the executable or target file first.
