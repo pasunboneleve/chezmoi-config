@@ -44,6 +44,8 @@ Installer helper usage is documented in
 [docs/development/install-package-helpers.md](docs/development/install-package-helpers.md).
 External dotfile checkout ownership is documented in
 [docs/development/external-dotfiles.md](docs/development/external-dotfiles.md).
+Linux GNOME keyboard sources and the Brazilian `C-;` overlay are documented in
+[docs/development/linux-keyboard-layout.md](docs/development/linux-keyboard-layout.md).
 After applying this configuration, run `chezmoi-options` to display the
 available bootstrap options and copyable commands.
 
@@ -75,6 +77,7 @@ run.
 - `~/.config/emacs` from `github.com/pasunboneleve/emacs.d`
 - `~/.roborev/config.toml`, with `server_addr` enforced as `unix://`
 - Linux-only `~/.config/xremap/xremap.yml`, symlinked into `~/.config/dotfiles`
+- Linux-only `~/.config/xkb` overlay (`brctrl`) and GNOME sources `au` plus `brctrl`
 - Linux-only user services:
   - `emacs.service`
   - `kata.service`

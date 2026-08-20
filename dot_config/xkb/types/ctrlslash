@@ -1,0 +1,17 @@
+default partial xkb_types "default" {
+
+    // Shift selects colon; Control selects slash while remaining Control.
+    type "FOUR_LEVEL_CTRL" {
+        modifiers = Shift + Control;
+        map[None] = Level1;
+        map[Shift] = Level2;
+        map[Control] = Level3;
+        map[Shift + Control] = Level4;
+        preserve[Control] = Control;
+        preserve[Shift + Control] = Control;
+        level_name[Level1] = "Base";
+        level_name[Level2] = "Shift";
+        level_name[Level3] = "Control";
+        level_name[Level4] = "Shift+Control";
+    };
+};

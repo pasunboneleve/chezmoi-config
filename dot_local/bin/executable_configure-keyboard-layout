@@ -5,7 +5,21 @@ if [ "${XDG_CURRENT_DESKTOP:-}" != "GNOME" ]; then
   exit 0
 fi
 
-if lsusb | grep -qi 'Apple, Inc\. Aluminum Keyboard (ANSI)'; then
-  gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'au')]"
-  gsettings set org.gnome.desktop.input-sources xkb-options "['model:applealu_ansi']"
+if ! command -v gsettings >/dev/null 2>&1; then
+  exit 0
+fi
+
+xkb_home="${XDG_CONFIG_HOME:-$HOME/.config}/xkb"
+brctrl_symbols="$xkb_home/symbols/brctrl"
+if [[ ! -f "$brctrl_symbols" ]]; then
+  echo "Missing Brazilian XKB overlay: $brctrl_symbols" >&2
+  exit 1
+fi
+
+gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'au'), ('xkb', 'brctrl')]"
+
+if command -v lsusb >/dev/null 2>&1 && lsusb | grep -qi 'Apple, Inc\. Aluminum Keyboard (ANSI)'; then
+  gsettings set org.gnome.desktop.input-sources xkb-options "['model:applealu_ansi', 'lv3:ralt_alt']"
+else
+  gsettings set org.gnome.desktop.input-sources xkb-options "['lv3:ralt_alt']"
 fi

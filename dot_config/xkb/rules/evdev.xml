@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xkbConfigRegistry SYSTEM "xkb.dtd">
+<xkbConfigRegistry version="1.1">
+  <layoutList>
+    <layout>
+      <configItem>
+        <name>brctrl</name>
+        <shortDescription>pt</shortDescription>
+        <description>Portuguese (Brazil, Ctrl-semicolon is slash)</description>
+        <countryList>
+          <iso3166Id>BR</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>por</iso639Id>
+        </languageList>
+      </configItem>
+    </layout>
+  </layoutList>
+</xkbConfigRegistry>
