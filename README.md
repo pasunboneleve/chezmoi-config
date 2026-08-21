@@ -44,7 +44,8 @@ Installer helper usage is documented in
 [docs/development/install-package-helpers.md](docs/development/install-package-helpers.md).
 External dotfile checkout ownership is documented in
 [docs/development/external-dotfiles.md](docs/development/external-dotfiles.md).
-Linux GNOME keyboard sources and the Brazilian `C-;` overlay are documented in
+Linux GNOME keyboard sources and the Brazilian punctuation overlay are
+documented in
 [docs/development/linux-keyboard-layout.md](docs/development/linux-keyboard-layout.md).
 After applying this configuration, run `chezmoi-options` to display the
 available bootstrap options and copyable commands.

@@ -1,11 +1,77 @@
 default partial alphanumeric_keys
 xkb_symbols "basic" {
     include "br(abnt2)"
+    include "level3(lalt_switch)"
+    include "level3(ralt_alt)"
     name[Group1] = "Portuguese (Brazil)";
 
-    // ABNT2 AB10 is semicolon. Control on that key must emit C-/ for undo.
+    // Disable the inherited Brazilian AltGr symbols. Alphabetic types retain
+    // normal Caps Lock behaviour; the remaining keys retain their Shift level.
+    key <AE01> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ 1, exclam ] };
+    key <AE02> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ 2, at ] };
+    key <AE03> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ 3, numbersign ] };
+    key <AE04> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ 4, dollar ] };
+    key <AE05> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ 5, percent ] };
+    key <AE06> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ 6, dead_diaeresis ] };
+    key <AE07> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ 7, ampersand ] };
+    key <AE08> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ 8, asterisk ] };
+    key <AE09> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ 9, parenleft ] };
+    key <AE10> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ 0, parenright ] };
+    key <AE11> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ minus, underscore ] };
+    key <AE12> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ equal, plus ] };
+
+    key <AD01> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ q, Q ] };
+    key <AD02> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ w, W ] };
+    key <AD03> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ e, E ] };
+    key <AD04> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ r, R ] };
+    key <AD05> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ t, T ] };
+    key <AD06> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ y, Y ] };
+    key <AD07> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ u, U ] };
+    key <AD08> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ i, I ] };
+    key <AD09> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ o, O ] };
+    key <AD10> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ p, P ] };
+    key <AD11> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ dead_acute, dead_grave ] };
+    key <AD12> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ bracketleft, braceleft ] };
+
+    key <AC01> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ a, A ] };
+    key <AC02> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ s, S ] };
+    key <AC03> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ d, D ] };
+    key <AC04> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ f, F ] };
+    key <AC05> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ g, G ] };
+    key <AC06> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ h, H ] };
+    key <AC07> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ j, J ] };
+    key <AC08> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ k, K ] };
+    key <AC09> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ l, L ] };
+
+    key <AB01> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ z, Z ] };
+    key <AB02> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ x, X ] };
+    key <AB03> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ c, C ] };
+    key <AB04> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ v, V ] };
+    key <AB05> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ b, B ] };
+    key <AB06> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ n, N ] };
+    key <AB07> { type[Group1] = "ALPHABETIC", symbols[Group1] = [ m, M ] };
+    key <AB08> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ comma, less ] };
+    key <AB09> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ period, greater ] };
+
+    key <TLDE> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ apostrophe, quotedbl ] };
+    key <BKSL> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ bracketright, braceright ] };
+    key <LSGT> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ backslash, bar ] };
+    key <AB11> { type[Group1] = "TWO_LEVEL", symbols[Group1] = [ slash, question ] };
+
+    // Put slash and question on the physical Brazilian semicolon key.
     key <AB10> {
-        type[Group1] = "FOUR_LEVEL_CTRL",
-        symbols[Group1] = [ semicolon, colon, slash, question ]
+        type[Group1] = "TWO_LEVEL",
+        symbols[Group1] = [ slash, question ]
+    };
+
+    // Keep cedilla and Brazilian dead accents on the first two levels while
+    // making common programming punctuation available through Left Alt.
+    key <AC10> {
+        type[Group1] = "FOUR_LEVEL_SEMIALPHABETIC",
+        symbols[Group1] = [ ccedilla, Ccedilla, semicolon, colon ]
+    };
+    key <AC11> {
+        type[Group1] = "FOUR_LEVEL",
+        symbols[Group1] = [ dead_tilde, dead_circumflex, quotedbl, apostrophe ]
     };
 };

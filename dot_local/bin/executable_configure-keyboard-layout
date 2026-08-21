@@ -19,7 +19,7 @@ fi
 gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'au'), ('xkb', 'brctrl')]"
 
 if command -v lsusb >/dev/null 2>&1 && lsusb | grep -qi 'Apple, Inc\. Aluminum Keyboard (ANSI)'; then
-  gsettings set org.gnome.desktop.input-sources xkb-options "['model:applealu_ansi', 'lv3:ralt_alt']"
+  gsettings set org.gnome.desktop.input-sources xkb-options "['model:applealu_ansi']"
 else
-  gsettings set org.gnome.desktop.input-sources xkb-options "['lv3:ralt_alt']"
+  gsettings set org.gnome.desktop.input-sources xkb-options "[]"
 fi

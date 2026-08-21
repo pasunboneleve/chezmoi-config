@@ -6,7 +6,7 @@
       <configItem>
         <name>brctrl</name>
         <shortDescription>pt</shortDescription>
-        <description>Portuguese (Brazil, Ctrl-semicolon is slash)</description>
+        <description>Portuguese (Brazil, programming punctuation)</description>
         <countryList>
           <iso3166Id>BR</iso3166Id>
         </countryList>
