@@ -320,6 +320,25 @@ install_bitwarden_desktop_rpm() {
     'https://vault.bitwarden.com/download/?app=desktop&platform=linux&variant=rpm'
 }
 
+install_codex_desktop_rpm() {
+  local architecture
+  local rpm_url
+
+  architecture="$(uname -m)"
+  case "$architecture" in
+    x86_64|aarch64) ;;
+    *)
+      echo "Skipping the Codex desktop app: no Linux RPM is available for $architecture."
+      return
+      ;;
+  esac
+
+  rpm_url="https://persistent.oaistatic.com/codex-app-prod/linux/rpm/latest/chatgpt.${architecture}.rpm"
+
+  echo "Installing or upgrading the latest Codex desktop app RPM."
+  run_with_colored_errors sudo dnf install -y "$rpm_url"
+}
+
 install_epson_v300_driver() {
   local archive_sha256="40588c4d7ad0e6049091b60b3a9ce895fe11180bd3f4f02e9e20189bc5aacbf6"
   local archive_url="https://download2.ebz.epson.net/iscan/plugin/gt-f720/rpm/x64/iscan-gt-f720-bundle-2.30.4.x64.rpm.tar.gz"
@@ -456,6 +475,7 @@ if command -v dnf >/dev/null 2>&1; then
     remove_legacy_userland_typst
     install_epson_v300_driver
     install_bitwarden_desktop_rpm
+    install_codex_desktop_rpm
     enable_docker_service
     enable_tailscale_service
     configure_xremap_permissions
@@ -510,6 +530,7 @@ if command -v brew >/dev/null 2>&1; then
     google-chrome \
     ghostty \
     google-cloud-sdk \
+    chatgpt \
     karabiner-elements \
     rectangle \
     shottr \

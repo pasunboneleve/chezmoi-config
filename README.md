@@ -60,8 +60,9 @@ packaged zsh plugins directly.
 On Linux, `install-codex-latest` verifies the complete Codex release package
 against its published digests, verifies its signed executables with Sigstore,
 and installs its helper executables and bundled resources. On macOS, the
-`codex` Homebrew cask installs Codex instead, and `install-codex-latest` is not
-run.
+`codex` Homebrew cask installs the CLI instead, and `install-codex-latest` is
+not run. The system package hook also installs the Codex desktop app from
+OpenAI's latest `chatgpt` RPM on Fedora and the `chatgpt` cask on macOS.
 
 ## Managed Highlights
 
