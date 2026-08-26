@@ -231,3 +231,11 @@ Use `ensure_google_cloud_dnf_repo` only in the Linux branch before installing `g
 - uses the matching Google RPM signing key for that repository family.
 
 Keep the Fedora-version selection local to this helper so the package list stays readable. If Google changes the supported repository mapping, update this helper instead of scattering repo logic through the install branch.
+
+## `ensure_cloudflared_dnf_repo`
+
+Use `ensure_cloudflared_dnf_repo` only in the Linux branch before installing
+`cloudflared`. It adds [Cloudflare's](https://www.cloudflare.com/) stable RPM
+repository through the DNF configuration manager, preserving the repository's
+package-signature checks and signing-key URL. On macOS, Homebrew installs the
+`cloudflared` formula directly and this helper is not rendered.

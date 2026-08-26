@@ -246,6 +246,22 @@ ensure_dnf_config_manager() {
   run_with_colored_errors sudo dnf install -y 'dnf-command(config-manager)'
 }
 
+ensure_dnf_repo_file() {
+  local repo_url="$1"
+
+  ensure_dnf_config_manager
+
+  if LANG=C.UTF-8 dnf --version | grep -q '^dnf5 version'; then
+    run_with_colored_errors sudo dnf config-manager addrepo --overwrite --from-repofile="$repo_url"
+  else
+    run_with_colored_errors sudo dnf config-manager --add-repo "$repo_url"
+  fi
+}
+
+ensure_cloudflared_dnf_repo() {
+  ensure_dnf_repo_file "https://pkg.cloudflare.com/cloudflared.repo"
+}
+
 ensure_google_chrome_dnf_repo() {
   local signing_key_fingerprint="7721f63bd38b4796"
   local signing_key_url="https://dl.google.com/linux/linux_signing_key.pub"
@@ -288,15 +304,7 @@ EOF
 }
 
 ensure_tailscale_dnf_repo() {
-  local repo_url="https://pkgs.tailscale.com/stable/fedora/tailscale.repo"
-
-  ensure_dnf_config_manager
-
-  if LANG=C.UTF-8 dnf --version | grep -q '^dnf5 version'; then
-    run_with_colored_errors sudo dnf config-manager addrepo --overwrite --from-repofile="$repo_url"
-  else
-    run_with_colored_errors sudo dnf config-manager --add-repo "$repo_url"
-  fi
+  ensure_dnf_repo_file "https://pkgs.tailscale.com/stable/fedora/tailscale.repo"
 }
 
 enable_tailscale_service() {
@@ -429,6 +437,7 @@ if command -v dnf >/dev/null 2>&1; then
     sudo dnf -y copr enable scottames/ghostty
     sudo dnf -y copr enable blakegardner/xremap
     sudo dnf -y copr enable claaj/typst
+    ensure_cloudflared_dnf_repo
     ensure_tailscale_dnf_repo
     ensure_google_chrome_dnf_repo
     ensure_google_cloud_dnf_repo
@@ -436,6 +445,7 @@ if command -v dnf >/dev/null 2>&1; then
     run_with_colored_errors sudo dnf install -y \
       awscli \
       chezmoi \
+      cloudflared \
       curl \
       direnv \
       docker-cli \
@@ -501,6 +511,7 @@ if command -v brew >/dev/null 2>&1; then
     python-argcomplete \
     awscli \
     chezmoi \
+    cloudflared \
     coreutils \
     direnv \
     docker \
