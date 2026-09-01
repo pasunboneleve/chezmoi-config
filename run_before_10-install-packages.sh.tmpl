@@ -428,6 +428,36 @@ remove_legacy_userland_typst() {
   fi
 }
 
+install_flatpak_theme_extensions() {
+  local failed=0
+  local flathub_repo="https://dl.flathub.org/repo/flathub.flatpakrepo"
+
+  if ! run_with_colored_errors sudo flatpak remote-add \
+      --system \
+      --if-not-exists \
+      flathub \
+      "$flathub_repo"; then
+    echo "Warning: Could not configure the system Flathub remote."
+    failed=1
+  fi
+
+  if ! run_with_colored_errors sudo flatpak install \
+      --system \
+      --runtime \
+      --noninteractive \
+      --or-update \
+      flathub \
+      org.gtk.Gtk3theme.adw-gtk3//3.22 \
+      org.gtk.Gtk3theme.adw-gtk3-dark//3.22; then
+    echo "Warning: Could not install the Flatpak GTK theme extensions."
+    failed=1
+  fi
+
+  if [ "$failed" = "1" ]; then
+    echo "Warning: Flatpak applications may not match the system theme; continuing the remaining setup."
+  fi
+}
+
 if command -v dnf >/dev/null 2>&1; then
   if ! authenticate_sudo; then
     sudo_authentication_failed=1
@@ -452,6 +482,7 @@ if command -v dnf >/dev/null 2>&1; then
       docker-cli \
       docker-compose \
       emacs \
+      flatpak \
       gfs-bodoni-fonts \
       gfs-didot-display-fonts \
       gh \
@@ -483,6 +514,7 @@ if command -v dnf >/dev/null 2>&1; then
       zsh-autosuggestions \
       zsh-syntax-highlighting
 
+    install_flatpak_theme_extensions
     remove_legacy_userland_typst
     install_epson_v300_driver
     install_bitwarden_desktop_rpm
