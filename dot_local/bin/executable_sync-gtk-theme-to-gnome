@@ -5,6 +5,17 @@ interface_schema="org.gnome.desktop.interface"
 wm_schema="org.gnome.desktop.wm.preferences"
 gtk3_settings="${XDG_CONFIG_HOME:-$HOME/.config}/gtk-3.0/settings.ini"
 
+installed_theme_or_fallback() {
+  local fallback_theme="$1"
+  local installed_theme="$2"
+
+  if [ -f "/usr/share/themes/$installed_theme/gtk-3.0/gtk.css" ]; then
+    printf '%s\n' "$installed_theme"
+  else
+    printf '%s\n' "$fallback_theme"
+  fi
+}
+
 sync_theme() {
   local color_scheme
   local current_theme
@@ -15,15 +26,15 @@ sync_theme() {
 
   case "$color_scheme" in
     "'prefer-dark'")
-      target_theme="Adwaita-dark"
+      target_theme="$(installed_theme_or_fallback "Adwaita-dark" "adw-gtk3-dark")"
       prefer_dark="1"
       ;;
     "'default'" | "'prefer-light'")
-      target_theme="Adwaita"
+      target_theme="$(installed_theme_or_fallback "Adwaita" "adw-gtk3")"
       prefer_dark="0"
       ;;
     *)
-      target_theme="Adwaita"
+      target_theme="$(installed_theme_or_fallback "Adwaita" "adw-gtk3")"
       prefer_dark="0"
       ;;
   esac

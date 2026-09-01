@@ -443,6 +443,7 @@ if command -v dnf >/dev/null 2>&1; then
     ensure_google_cloud_dnf_repo
 
     run_with_colored_errors sudo dnf install -y \
+      adw-gtk3-theme \
       awscli \
       chezmoi \
       cloudflared \
