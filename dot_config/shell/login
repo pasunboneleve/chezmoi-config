@@ -1,0 +1,6 @@
+# Raise the soft file-descriptor limit when the operating system permits it.
+_chezmoi_nofile="$(ulimit -Sn)"
+if [ "$_chezmoi_nofile" != unlimited ] && [ "$_chezmoi_nofile" -lt 65536 ]; then
+  ulimit -Sn 65536 2>/dev/null || :
+fi
+unset _chezmoi_nofile

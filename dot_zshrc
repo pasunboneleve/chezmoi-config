@@ -1,0 +1,74 @@
+[[ -o interactive ]] || return
+
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=100000
+SAVEHIST=100000
+setopt HIST_IGNORE_ALL_DUPS HIST_SAVE_NO_DUPS SHARE_HISTORY
+PS1='%~ %# '
+if [[ ${TERM:-dumb} == dumb ]]; then
+  unsetopt zle
+  PS1='$ '
+  return
+fi
+
+bindkey -e
+autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey '^[[A' up-line-or-beginning-search
+bindkey '^[[B' down-line-or-beginning-search
+bindkey '^[OA' up-line-or-beginning-search
+bindkey '^[OB' down-line-or-beginning-search
+bindkey '^[[1;5C' forward-word
+bindkey '^[[1;5D' backward-word
+bindkey '^[[3;5~' kill-word
+bindkey '^H' backward-kill-word
+
+[[ -d "$HOME/.grok/completions/zsh" ]] && fpath=("$HOME/.grok/completions/zsh" "${fpath[@]}")
+autoload -Uz compinit
+compinit -i
+
+if [[ -r "$HOME/.config/shell/interactive" ]]; then
+  source "$HOME/.config/shell/interactive"
+fi
+
+if command -v carapace >/dev/null 2>&1; then
+  export CARAPACE_BRIDGES="${CARAPACE_BRIDGES:-zsh,bash}"
+  source <(carapace _carapace zsh)
+else
+  if [[ -r "${_chezmoi_gcloud:-}/completion.zsh.inc" ]]; then
+    source "$_chezmoi_gcloud/completion.zsh.inc"
+  fi
+  if command -v terraform >/dev/null 2>&1 || command -v register-python-argcomplete >/dev/null 2>&1; then
+    autoload -Uz bashcompinit
+    bashcompinit
+    if command -v terraform >/dev/null 2>&1; then
+      complete -o nospace -C "$(command -v terraform)" terraform
+    fi
+    if command -v register-python-argcomplete >/dev/null 2>&1; then
+      eval "$(register-python-argcomplete pipx)"
+    fi
+  fi
+  [[ -r "$HOME/.bun/_bun" ]] && source "$HOME/.bun/_bun"
+  if command -v kubectl >/dev/null 2>&1; then
+    source <(kubectl completion zsh)
+  fi
+  if command -v ng >/dev/null 2>&1; then
+    source <(ng completion script)
+  fi
+fi
+unset _chezmoi_gcloud
+
+autoload -Uz add-zsh-hook
+_chezmoi_terminal_title() { print -Pn '\e]0;%~\a'; }
+[[ -t 1 ]] && add-zsh-hook precmd _chezmoi_terminal_title
+
+_chezmoi_plugin_dir="${HOMEBREW_PREFIX:-/usr}/share"
+if [[ -r "$_chezmoi_plugin_dir/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+  source "$_chezmoi_plugin_dir/zsh-autosuggestions/zsh-autosuggestions.zsh"
+fi
+if [[ -r "$_chezmoi_plugin_dir/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
+  ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern cursor)
+  source "$_chezmoi_plugin_dir/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+fi
+unset _chezmoi_plugin_dir

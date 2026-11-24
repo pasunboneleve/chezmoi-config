@@ -78,8 +78,8 @@ ensure_emacs() {
     return
   fi
 
-  echo "emacs is not installed, and neither dnf nor brew is available to install it."
-  exit 1
+  echo "Emacs is not installed. Install it with your system package manager."
+  return 1
 }
 
 ensure_emacs_config() {
@@ -510,6 +510,7 @@ if command -v dnf >/dev/null 2>&1; then
       unzip \
       xremap-gnome \
       zathura \
+      zoxide \
       zsh \
       zsh-autosuggestions \
       zsh-syntax-highlighting
@@ -523,10 +524,13 @@ if command -v dnf >/dev/null 2>&1; then
     enable_tailscale_service
     configure_xremap_permissions
   fi
-fi
-
-if ! command -v starship >/dev/null 2>&1; then
-  echo "starship is not available from the enabled Fedora repos; install it separately."
+elif command -v apt-get >/dev/null 2>&1; then
+  if ! authenticate_sudo; then
+    echo "Skipping APT packages because sudo is unavailable or authentication failed."
+  else
+    run_with_colored_errors sudo apt-get update
+    run_with_colored_errors sudo apt-get install -y bash-completion emacs curl direnv zsh
+  fi
 fi
 
 install_emacs_packages
@@ -541,8 +545,10 @@ if command -v brew >/dev/null 2>&1; then
   # { yes || true; } answers any formula y/n prompts (e.g. new Python version);
   # the || true prevents a SIGPIPE from yes breaking set -o pipefail.
   { yes || true; } | brew install \
-    python-argcomplete \
+    atuin \
     awscli \
+    bash \
+    carapace \
     chezmoi \
     cloudflared \
     coreutils \
@@ -558,15 +564,14 @@ if command -v brew >/dev/null 2>&1; then
     go \
     openssl@3 \
     pkg-config \
+    python-argcomplete \
     restic \
     ripgrep \
     starship \
-    zsh-autocomplete \
+    zoxide \
     zsh-autosuggestions \
-    zsh-completions \
     zegervdv/zathura/zathura \
     zegervdv/zathura/zathura-pdf-poppler \
-    zsh-history-substring-search \
     zsh-syntax-highlighting
   brew install --cask \
     codex \

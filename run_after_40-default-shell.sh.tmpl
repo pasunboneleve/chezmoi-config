@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-{{ if ne .chezmoi.os "linux" -}}
-# macOS has used zsh as the default login shell since Catalina, so there is
-# nothing to change here. Only Fedora (where bash is the default) needs this.
-echo "Skipping default shell change: zsh is already the default on this OS."
+{{ if or (ne .chezmoi.os "linux") (ne (get .chezmoi.osRelease "id") "fedora") -}}
+# Preserve the account shell on macOS and managed Linux workstations.
+echo "Skipping default shell change on this OS."
 exit 0
 {{ end -}}
 

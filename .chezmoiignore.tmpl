@@ -1,15 +1,18 @@
 README.md
+AGENTS.md
+docs/
+tests/
 
 {{ if ne .chezmoi.os "linux" }}
-dot_config/xremap/
-dot_config/xkb/
-dot_config/systemd/
-dot_local/bin/executable_sync-gtk-theme-to-gnome
-dot_local/share/applications/emacs-client.desktop.tmpl
+.config/xremap/
+.config/xkb/
+.config/systemd/
+.local/bin/sync-gtk-theme-to-gnome
+.local/share/applications/emacs-client.desktop
 {{ end }}
 
 {{ if ne .chezmoi.os "darwin" }}
-dot_config/karabiner/
+.config/karabiner/
 Library/
 Applications/
 {{ end }}

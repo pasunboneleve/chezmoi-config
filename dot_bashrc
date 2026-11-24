@@ -1,0 +1,83 @@
+# Ubuntu's ~/.profile may source this file before finishing login setup.
+if [ "${_chezmoi_reading_profile:-}" = 1 ] || [ "${_chezmoi_bashrc_loaded:-}" = 1 ]; then
+  return
+fi
+_chezmoi_bashrc_loaded=1
+
+# Bash login and interactive shells share the same environment as Zsh.
+if [ -r "$HOME/.config/shell/env" ]; then
+  . "$HOME/.config/shell/env"
+fi
+
+case $- in
+  *i*) ;;
+  *) return ;;
+esac
+HISTCONTROL=ignoredups:erasedups
+HISTSIZE=100000
+HISTFILESIZE=100000
+shopt -s histappend checkwinsize
+PS1='\w \$ '
+if [ "${TERM:-dumb}" = dumb ]; then
+  PS1='$ '
+  return
+fi
+
+if [ -r /etc/bashrc ]; then
+  . /etc/bashrc
+fi
+bind 'set completion-ignore-case on'
+bind '"\e[A": history-search-backward'
+bind '"\e[B": history-search-forward'
+bind '"\eOA": history-search-backward'
+bind '"\eOB": history-search-forward'
+bind '"\e[1;5C": forward-word'
+bind '"\e[1;5D": backward-word'
+bind '"\e[3;5~": kill-word'
+bind '"\C-h": backward-kill-word'
+
+if [ -r "$HOME/.config/shell/interactive" ]; then
+  . "$HOME/.config/shell/interactive"
+fi
+
+# The system Bash on macOS predates default programmable completions.
+if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 1) )) &&
+   command -v carapace >/dev/null 2>&1; then
+  export CARAPACE_BRIDGES="${CARAPACE_BRIDGES:-bash,zsh}"
+  source <(carapace _carapace bash)
+else
+  for _chezmoi_completion in "${HOMEBREW_PREFIX:-/usr/local}/etc/bash_completion" \
+    /usr/share/bash-completion/bash_completion /etc/bash_completion; do
+    if [ -r "$_chezmoi_completion" ]; then
+      . "$_chezmoi_completion"
+      break
+    fi
+  done
+  unset _chezmoi_completion
+  if [ -r "${_chezmoi_gcloud:-}/completion.bash.inc" ]; then
+    . "$_chezmoi_gcloud/completion.bash.inc"
+  fi
+  if [ -s "${NVM_DIR:-}/bash_completion" ]; then
+    . "$NVM_DIR/bash_completion"
+  fi
+  if command -v terraform >/dev/null 2>&1; then
+    complete -o nospace -C "$(command -v terraform)" terraform
+  fi
+  if command -v register-python-argcomplete >/dev/null 2>&1; then
+    eval "$(register-python-argcomplete pipx)"
+  fi
+  if command -v kubectl >/dev/null 2>&1; then
+    source <(kubectl completion bash)
+  fi
+  if command -v ng >/dev/null 2>&1; then
+    source <(ng completion script)
+  fi
+fi
+unset _chezmoi_gcloud
+
+for _chezmoi_rc in "$HOME/.bashrc.d/"*; do
+  if [ -f "$_chezmoi_rc" ] && [ -r "$_chezmoi_rc" ]; then
+    . "$_chezmoi_rc"
+  fi
+done
+unset _chezmoi_rc

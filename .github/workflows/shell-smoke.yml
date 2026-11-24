@@ -1,0 +1,44 @@
+name: Shell smoke tests
+on:
+  push:
+    branches: [main, shell-consolidation]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  shell:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Download source at this revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/tarball/$GITHUB_SHA" \
+            | tar -xz --strip-components=1
+      - name: Install test dependencies on Ubuntu
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zsh bash-completion git
+          curl -fsSL https://github.com/twpayne/chezmoi/releases/download/v2.73.0/chezmoi_2.73.0_linux_amd64.tar.gz \
+            | tar -xz -C "$RUNNER_TEMP" chezmoi
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Install test dependencies on macOS
+        if: runner.os == 'macOS'
+        run: brew install bash chezmoi
+      - name: Test shell startup and integrations
+        run: bash tests/shell-smoke.sh --install-tools
+      - name: Test Bash completion without Carapace
+        if: runner.os == 'Linux'
+        run: bash tests/shell-smoke.sh --check-bash-completion
