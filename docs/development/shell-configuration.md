@@ -45,3 +45,6 @@ and Emacs installation in place.
 Run `bash tests/shell-smoke.sh` on Fedora, macOS, or Ubuntu with Bash, Zsh,
 and chezmoi installed. Use `--install-tools` to also download and exercise
 the actual shell integrations inside the temporary home directory.
+On Linux with Git and bash-completion installed and Carapace absent from
+`PATH`, use `--check-bash-completion` to verify Git completion in a non-login
+Bash shell.

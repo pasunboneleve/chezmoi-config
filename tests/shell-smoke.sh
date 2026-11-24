@@ -80,6 +80,22 @@ assert_shell xterm "$bash_bin" -ilc '[ "$local_rc_count" = 1 ]'
 assert_shell xterm "$zsh_bin" -ic 'bindkey "^[[A" | grep -q up-line-or-beginning-search'
 assert_shell xterm "$bash_bin" -ic 'bind -p | grep -q history-search-backward'
 
+if [[ "${1:-}" == --check-bash-completion ]]; then
+  assert_shell xterm "$bash_bin" -ic '
+    ! command -v carapace >/dev/null || exit 1
+    if declare -F _comp_load >/dev/null; then
+      _comp_load git || exit 1
+    else
+      _completion_loader git
+      case $? in
+        0|124) ;; # Readline uses 124 to retry after loading a completion.
+        *) exit 1 ;;
+      esac
+    fi
+    complete -p git
+  '
+fi
+
 if [[ "${1:-}" == --install-tools ]]; then
   bash "$source_dir/run_after_19-install-shell-tools.sh"
   bash "$source_dir/run_after_19-install-shell-tools.sh"

@@ -46,6 +46,14 @@ if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 1) )
   export CARAPACE_BRIDGES="${CARAPACE_BRIDGES:-bash,zsh}"
   source <(carapace _carapace bash)
 else
+  for _chezmoi_completion in "${HOMEBREW_PREFIX:-/usr/local}/etc/bash_completion" \
+    /usr/share/bash-completion/bash_completion /etc/bash_completion; do
+    if [ -r "$_chezmoi_completion" ]; then
+      . "$_chezmoi_completion"
+      break
+    fi
+  done
+  unset _chezmoi_completion
   if [ -r "${_chezmoi_gcloud:-}/completion.bash.inc" ]; then
     . "$_chezmoi_gcloud/completion.bash.inc"
   fi

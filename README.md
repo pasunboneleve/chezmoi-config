@@ -1,5 +1,7 @@
 # Chezmoi Config
 
+[![Shell smoke tests](https://github.com/pasunboneleve/chezmoi-config/actions/workflows/shell-smoke.yml/badge.svg?branch=main)](https://github.com/pasunboneleve/chezmoi-config/actions/workflows/shell-smoke.yml?query=branch%3Amain)
+
 Personal machine configuration managed by chezmoi.
 
 ## Bootstrap
