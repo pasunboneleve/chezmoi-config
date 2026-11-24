@@ -1,0 +1,60 @@
+# Shared by Bash and Zsh, including non-interactive login shells.
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+
+export EDITOR="emacsclient -t"
+export VISUAL="emacsclient -c"
+export GOPATH="${GOPATH:-$HOME/go}"
+export GOBIN="${GOBIN:-$GOPATH/bin}"
+export DENO_INSTALL="${DENO_INSTALL:-$HOME/.deno}"
+export DBT_PROFILES_DIR="${DBT_PROFILES_DIR:-$HOME/.dbt}"
+export DIRENV_ALLOW_NIX=1
+export LSP_USE_PLISTS=true
+
+case ":${LIBRARY_PATH:-}:" in
+  *:"$HOME/.bhc/lib":*) ;;
+  *) export LIBRARY_PATH="$HOME/.bhc/lib${LIBRARY_PATH:+:$LIBRARY_PATH}" ;;
+esac
+
+case "${OSTYPE:-}" in
+  darwin*)
+    export LANG="${LANG:-en_AU.UTF-8}"
+    # Homebrew's fixed prefixes avoid a brew invocation in every child shell.
+    if [ -x /opt/homebrew/bin/brew ]; then
+      export HOMEBREW_PREFIX=/opt/homebrew
+    elif [ -x /usr/local/bin/brew ]; then
+      export HOMEBREW_PREFIX=/usr/local
+    fi
+    ;;
+  *) export LANG="${LANG:-C.UTF-8}" ;;
+esac
+
+_chezmoi_path_prepend() {
+  case ":${PATH:-}:" in
+    *:"$1":*) ;;
+    *) PATH="$1${PATH:+:$PATH}" ;;
+  esac
+}
+
+if [ -n "${HOMEBREW_PREFIX:-}" ]; then
+  _chezmoi_path_prepend "$HOMEBREW_PREFIX/sbin"
+  _chezmoi_path_prepend "$HOMEBREW_PREFIX/bin"
+fi
+for _chezmoi_path in \
+  "$HOME/.local/share/coursier/bin" "$HOME/.lmstudio/bin" "$HOME/.bhc/bin" \
+  "${KREW_ROOT:-$HOME/.krew}/bin" "$DENO_INSTALL/bin" "$HOME/.grok/bin" \
+  "$GOBIN" "$HOME/.bun/bin" "$HOME/.cargo/bin" "$HOME/bin" "$HOME/.local/bin"; do
+  _chezmoi_path_prepend "$_chezmoi_path"
+done
+unset -f _chezmoi_path_prepend
+unset _chezmoi_path
+export PATH
+
+# The toolchains' own scripts know how to populate the rest of their environment.
+for _chezmoi_env in "$HOME/.nix-profile/etc/profile.d/nix.sh" \
+  "$HOME/.cargo/env" "$HOME/.ghcup/env"; do
+  if [ -r "$_chezmoi_env" ]; then
+    . "$_chezmoi_env"
+  fi
+done
+unset _chezmoi_env

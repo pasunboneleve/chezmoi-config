@@ -1,0 +1,62 @@
+command_timeout = 250
+
+format = """
+$directory\
+$git_branch\
+$git_commit\
+$git_state\
+$git_status\
+$kubernetes\
+${custom.haskell_version}\
+${custom.haskell_compiler}\
+$python\
+$env_var\
+$sudo\
+$fill\
+$time\
+$cmd_duration\
+$line_break\
+$character\
+"""
+add_newline = false
+
+[fill]
+disabled = false
+symbol = "."
+style = "bold black"
+
+[time]
+disabled = false
+time_format = "%T"
+
+[cmd_duration]
+disabled = false
+
+[custom.haskell_version]
+disabled = false
+description = "Haskell project version"
+command = "yq -r .version package.yaml"
+shell = ["sh"]
+detect_files = ["package.yaml"]
+symbol = "📦 "
+style = "gray"
+format = "is [$symbol($output)]($style) "
+
+[custom.haskell_compiler]
+disabled = false
+description = "Haskell project compiler version"
+command = "ghc --numeric-version"
+shell = ["sh"]
+detect_files = ["package.yaml", "stack.yaml"]
+detect_extensions = ["hs"]
+symbol = "λ= "
+style = "yellow"
+format = "via [$symbol($output)]($style) "
+
+[kubernetes]
+disabled = false
+format = '[⛵ \($namespace\) $context](dimmed blue) '
+
+[git_branch]
+format = '[$symbol$branch:$remote_branch](blue)'
+truncation_length = 25

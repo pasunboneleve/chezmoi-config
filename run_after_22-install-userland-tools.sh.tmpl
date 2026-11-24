@@ -589,56 +589,6 @@ install_icon_fonts() {
   {{ end -}}
 }
 
-install_zsh_plugins() {
-  if ! command -v git >/dev/null 2>&1; then
-    echo "Skipping zsh plugin checkout: git is not installed."
-    return
-  fi
-
-  local plugin_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
-  local plugin_bin="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/bin"
-  local executable
-  local name
-
-  mkdir -p "$plugin_dir"
-
-  {{ if eq .chezmoi.os "linux" -}}
-  if [ ! -d "$plugin_dir/zsh-autocomplete/.git" ]; then
-    git clone git@github.com:marlonrichert/zsh-autocomplete.git "$plugin_dir/zsh-autocomplete"
-  fi
-
-  if [ ! -d "$plugin_dir/zsh-completions/.git" ]; then
-    git clone git@github.com:zsh-users/zsh-completions.git "$plugin_dir/zsh-completions"
-  fi
-
-  if [ ! -d "$plugin_dir/zsh-history-substring-search/.git" ]; then
-    git clone git@github.com:zsh-users/zsh-history-substring-search.git "$plugin_dir/zsh-history-substring-search"
-  fi
-  {{ end -}}
-
-  if [ ! -d "$plugin_dir/zsh-z/.git" ]; then
-    git clone git@github.com:agkozak/zsh-z.git "$plugin_dir/zsh-z"
-  fi
-
-  mkdir -p "$plugin_bin"
-  {{ if eq .chezmoi.os "linux" -}}
-  for executable in "$plugin_dir"/*/* "$HOME/.local/share/zinit/plugins"/*/*; do
-  {{ else -}}
-  for executable in "$plugin_dir"/*/*; do
-  {{ end -}}
-    [ -f "$executable" ] || continue
-    [ -x "$executable" ] || continue
-    case "$executable" in
-      */zinit-annex-*/*|*/zdharma-continuum---zinit-annex-*/*) continue ;;
-    esac
-    name="$(basename "$executable")"
-    case "$name" in
-      .*|*.plugin.zsh|*.zsh|*.zwc|*.png|*.md|test-*|run-tests*) continue ;;
-    esac
-    ln -sfn "$executable" "$plugin_bin/$name"
-  done
-}
-
 ensure_gh_extension() {
   local extension="$1"
   local repository="$2"
@@ -731,4 +681,3 @@ install_claude_cli
 
 ensure_gh_extension markdown-preview ssh://git@github.com/yusukebe/gh-markdown-preview.git
 install_icon_fonts
-install_zsh_plugins

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 expected_dir="${HOME}/src/projects"
-config_dir="${XDG_CONFIG_HOME:-"${HOME}/.config"}/dotfiles"
+config_dir="${XDG_CONFIG_HOME:-"${HOME}/.config"}/github-favourites"
 repo_list="${1:-"${config_dir}/github-favourites.txt"}"
 
 warn() {
@@ -29,8 +29,8 @@ Default repo list:
   ${config_dir}/github-favourites.txt
 
 Example:
-  mkdir -p ~/.config/dotfiles
-  cat > ~/.config/dotfiles/github-favourites.txt <<'LIST'
+  mkdir -p "${config_dir}"
+  cat > "${config_dir}/github-favourites.txt" <<'LIST'
   pasunboneleve/chezmoi-config
   pasunboneleve/emacs.d
   LIST

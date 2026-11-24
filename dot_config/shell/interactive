@@ -1,0 +1,87 @@
+# Sourced from Bash and Zsh after the TERM=dumb guard.
+if [ -t 0 ]; then
+  GPG_TTY="$(tty)"
+  export GPG_TTY
+  stty -ixon
+fi
+if [ -r "$HOME/.secret_env" ]; then
+  . "$HOME/.secret_env"
+fi
+
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  . "$NVM_DIR/nvm.sh"
+fi
+
+if [ -n "${ZSH_VERSION:-}" ]; then
+  _chezmoi_shell=zsh
+else
+  _chezmoi_shell=bash
+fi
+
+_chezmoi_gcloud="$HOME/Downloads/google-cloud-sdk"
+if [ -r "$_chezmoi_gcloud/path.$_chezmoi_shell.inc" ]; then
+  . "$_chezmoi_gcloud/path.$_chezmoi_shell.inc"
+fi
+
+# Atuin sets up Bash preexec first so Starship can register with it.
+if command -v atuin >/dev/null 2>&1 && _chezmoi_init="$(atuin init "$_chezmoi_shell" --disable-up-arrow)"; then
+  eval "$_chezmoi_init"
+fi
+if command -v zoxide >/dev/null 2>&1 && _chezmoi_init="$(zoxide init "$_chezmoi_shell")"; then
+  eval "$_chezmoi_init"
+fi
+if command -v direnv >/dev/null 2>&1 && _chezmoi_init="$(direnv hook "$_chezmoi_shell")"; then
+  eval "$_chezmoi_init"
+fi
+if [ "${CHEZMOI_PROMPT:-starship}" = starship ] && command -v starship >/dev/null 2>&1; then
+  export STARSHIP_CONFIG="${STARSHIP_CONFIG:-$HOME/.config/starship.toml}"
+  if _chezmoi_init="$(starship init "$_chezmoi_shell" --print-full-init)"; then
+    eval "$_chezmoi_init"
+  fi
+fi
+unset _chezmoi_init _chezmoi_shell
+
+gcloud-use() {
+  if [ "$#" -ne 2 ] || [ -z "$1" ] || [ -z "$2" ]; then
+    printf '%s\n' 'usage: gcloud-use <account> <project-id>' >&2
+    return 1
+  fi
+
+  gcloud auth login "$1" &&
+    gcloud config set account "$1" &&
+    gcloud config set project "$2" &&
+    gcloud auth application-default login &&
+    gcloud auth application-default set-quota-project "$2" || return
+
+  printf '\nActive gcloud account: %s\n' "$(gcloud config get-value account 2>/dev/null)"
+  printf 'Active gcloud project: %s\n' "$(gcloud config get-value project 2>/dev/null)"
+}
+
+render-markdown() {
+  local filename filepath today
+  if [ "$#" -ne 1 ]; then
+    printf '%s\n' 'usage: render-markdown <file>' >&2
+    return 1
+  fi
+
+  filename="${1##*/}"
+  today="$(date)"
+  filepath="$(mktemp "${TMPDIR:-/tmp}/markdown.XXXXXXXX")" || return
+  if ! pandoc --standalone --metadata "date-meta=$today" --metadata "date=$today" \
+      --metadata "title=${filename%.*}" \
+      --template "$HOME/.config/shell/markdown-template.html" -- "$1" > "$filepath"; then
+    rm -f "$filepath"
+    return 1
+  fi
+  mv "$filepath" "$filepath.html" || return
+  if command -v google-chrome >/dev/null 2>&1; then
+    google-chrome "$filepath.html"
+  elif [ -x /usr/bin/open ] && [ "${OSTYPE#darwin}" != "$OSTYPE" ]; then
+    open "$filepath.html"
+  elif command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$filepath.html"
+  else
+    printf '%s\n' "$filepath.html"
+  fi
+}

@@ -5,7 +5,7 @@ usage() {
   cat <<'USAGE'
 Show bootstrap options for this chezmoi configuration.
 
-Run these commands from the dotfiles repository:
+Run these commands from the chezmoi-config repository:
 
   Normal apply
     chezmoi --source . apply

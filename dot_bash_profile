@@ -1,0 +1,12 @@
+# Ubuntu and local login settings can still be provided through ~/.profile.
+if [ -r "$HOME/.profile" ]; then
+  _chezmoi_reading_profile=1
+  . "$HOME/.profile"
+  unset _chezmoi_reading_profile
+fi
+if [ -r "$HOME/.bashrc" ]; then
+  . "$HOME/.bashrc"
+fi
+if [ -r "$HOME/.config/shell/login" ]; then
+  . "$HOME/.config/shell/login"
+fi
